@@ -1,4 +1,4 @@
-# Invoice System (React + Express + PostgreSQL)
+# InvoiceDoc v2 (React + Express + PostgreSQL)
 
 This project contains:
 - PostgreSQL schema + CSV import scripts
@@ -9,9 +9,9 @@ This project contains:
 Create DB:
     createdb invoices_db
 
-Apply schema + import (run from server/ folder):
-    psql -d invoices_db -f src/sql/001_schema.sql
-    psql -d invoices_db -f src/sql/002_import_csv.sql
+Apply schema + import (run from database/ folder):
+    psql -d invoices_db -f /sql/sql_run.sql
+    <!-- psql -d invoices_db -f src/sql/002_import_csv.sql -->
 
 ## 2) Server
     cd server

@@ -44,7 +44,7 @@ export default function InvoiceView() {
       <div className="card">
         <div className="flex justify-between mb-4">
           <div>
-            <div className="brand mb-4">InvoicePro</div>
+            <div className="brand mb-4">InvoiceDoc v2</div>
             <div className="font-bold">Customer</div>
             <div>{h.customer_name}</div>
             <div className="text-muted">{h.address_line1 || "-"}</div>

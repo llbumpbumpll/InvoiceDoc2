@@ -1,8 +1,8 @@
 {
-  "name": "invoice-server",
-  "description": "Invoice System backend API (Express + PostgreSQL)",
+  "name": "invoicedoc-server",
+  "description": "InvoiceDoc v2 backend API (Express + PostgreSQL)",
   "notes": "Usage: `npm run dev` for watch mode, `npm start` for production. Requires DATABASE_URL in .env",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "type": "module",
   "scripts": {
     "dev": "node --watch src/app.js",
