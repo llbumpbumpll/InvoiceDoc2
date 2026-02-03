@@ -1,0 +1,15 @@
+# Environment files (secrets)
+.env
+client/.env
+server/.env
+
+# Node
+node_modules/
+client/node_modules/
+server/node_modules/
+
+# Build outputs
+client/dist/
+server/dist/
+
+TA_TEMPLATE.md
