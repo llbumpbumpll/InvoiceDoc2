@@ -48,7 +48,56 @@ docker-compose ps
 
 For detailed Docker documentation, see [README.DOCKER.md](./README.DOCKER.md)
 
-### Option 2: Local Development Setup
+### Option 2: Database Only (for Local Development)
+
+Run only the database in Docker while developing server and client locally:
+
+```bash
+# Start database only
+./docker-db-start.sh
+
+# Or using npm
+npm run docker:db:start
+
+# Or using docker-compose directly
+docker-compose -f docker-compose.db.yml up -d
+```
+
+**Database Access:**
+- Host: `localhost:15432`
+- Database: `invoices_db`
+- Username: `root`
+- Password: `root`
+- Adminer (Web UI): http://localhost:8080
+
+**Useful Commands:**
+```bash
+# Stop database
+./docker-db-stop.sh
+# or
+npm run docker:db:stop
+
+# View logs
+npm run docker:db:logs
+
+# Check status
+npm run docker:db:ps
+```
+
+Then run the database setup script:
+
+```bash
+cd database
+./setup_db.sh
+```
+
+Or manually run SQL:
+
+```bash
+PGPASSWORD=root psql -h localhost -p 15432 -U root -d invoices_db -f sql/sql_run.sql
+```
+
+### Option 3: Full Local Development Setup
 
 #### 1. Database Setup
 
@@ -132,9 +181,12 @@ InvoiceDoc2/
 │   ├── data/              # CSV test data
 │   └── setup_db.sh        # Database setup script
 ├── docker-compose.yml     # Docker Compose for full stack
-├── docker-start.sh        # Start script
-├── docker-stop.sh         # Stop script
-├── docker-logs.sh         # Logs script
+├── docker-compose.db.yml  # Docker Compose for database only
+├── docker-start.sh        # Start script (full stack)
+├── docker-stop.sh         # Stop script (full stack)
+├── docker-logs.sh         # Logs script (full stack)
+├── docker-db-start.sh     # Start script (database only)
+├── docker-db-stop.sh      # Stop script (database only)
 └── README.DOCKER.md       # Docker documentation
 ```
 

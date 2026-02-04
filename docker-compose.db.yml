@@ -1,0 +1,45 @@
+services:
+  # PostgreSQL Database (for local development)
+  database:
+    image: postgres:17-alpine3.22
+    platform: linux/amd64
+    container_name: invoicedoc-db-dev
+    restart: always
+    shm_size: 128mb
+    ports:
+      - "15432:5432"
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: invoices_db
+    volumes:
+      - pgdata-dev:/var/lib/postgresql/data
+      - ./database/init:/docker-entrypoint-initdb.d
+    networks:
+      - invoicedoc-db-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U root"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Adminer (Database Admin UI)
+  adminer:
+    image: adminer
+    platform: linux/amd64
+    container_name: invoicedoc-adminer-dev
+    restart: always
+    ports:
+      - "8080:8080"
+    depends_on:
+      - database
+    networks:
+      - invoicedoc-db-network
+
+volumes:
+  pgdata-dev:
+    driver: local
+
+networks:
+  invoicedoc-db-network:
+    driver: bridge
