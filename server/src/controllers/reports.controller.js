@@ -1,8 +1,5 @@
-// Reports controller (ตรรกะสรุปยอดขาย)
-// Example usage: GET /api/reports/product-sales
 import { pool } from "../db/pool.js";
 
-// Latest invoices (quick summary)
 export async function getInvoicesMonthlySummary(req, res) {
   const { rows } = await pool.query(`
     select i.invoice_no, i.invoice_date, c.name as customer_name, i.amount_due
@@ -14,54 +11,164 @@ export async function getInvoicesMonthlySummary(req, res) {
   res.json(rows);
 }
 
-// Sales grouped by product
 export async function getSalesByProductSummary(req, res) {
+  const { product_id, date_from, date_to, page = 1, limit = 10 } = req.query;
+  const offset = (Number(page) - 1) * Number(limit);
+  
+  let whereClause = "WHERE 1=1";
+  const params = [];
+  let paramIndex = 1;
+
+  if (product_id) {
+    whereClause += ` AND p.id = $${paramIndex++}`;
+    params.push(product_id);
+  }
+  if (date_from) {
+    whereClause += ` AND i.invoice_date >= $${paramIndex++}`;
+    params.push(date_from);
+  }
+  if (date_to) {
+    whereClause += ` AND i.invoice_date <= $${paramIndex++}`;
+    params.push(date_to);
+  }
+
+  const countResult = await pool.query(`
+    SELECT COUNT(DISTINCT p.id) as total
+    FROM invoice_line_item li
+    JOIN product p ON p.id = li.product_id
+    JOIN invoice i ON i.id = li.invoice_id
+    ${whereClause}
+  `, params);
+  const total = Number(countResult.rows[0].total);
+
   const { rows } = await pool.query(`
-    select p.code as product_code, p.name as product_name,
-           sum(li.quantity) as quantity_sold,
-           sum(li.extended_price) as value_sold
-    from invoice_line_item li
-    join product p on p.id = li.product_id
-    group by p.code, p.name
-    order by sum(li.extended_price) desc
-  `);
-  res.json(rows);
+    SELECT p.id as product_id, p.code as product_code, p.name as product_name,
+           SUM(li.quantity) as quantity_sold,
+           SUM(li.extended_price) as value_sold
+    FROM invoice_line_item li
+    JOIN product p ON p.id = li.product_id
+    JOIN invoice i ON i.id = li.invoice_id
+    ${whereClause}
+    GROUP BY p.id, p.code, p.name
+    ORDER BY SUM(li.extended_price) DESC
+    LIMIT $${paramIndex++} OFFSET $${paramIndex++}
+  `, [...params, Number(limit), offset]);
+  
+  res.json({ data: rows, total, page: Number(page), limit: Number(limit), totalPages: Math.ceil(total / Number(limit)) });
 }
 
-// Sales grouped by customer and product
 export async function getSalesByCustomerSummary(req, res) {
+  const { product_id, customer_id, date_from, date_to, page = 1, limit = 10 } = req.query;
+  const offset = (Number(page) - 1) * Number(limit);
+  
+  let whereClause = "WHERE 1=1";
+  const params = [];
+  let paramIndex = 1;
+
+  if (product_id) {
+    whereClause += ` AND p.id = $${paramIndex++}`;
+    params.push(product_id);
+  }
+  if (customer_id) {
+    whereClause += ` AND c.id = $${paramIndex++}`;
+    params.push(customer_id);
+  }
+  if (date_from) {
+    whereClause += ` AND i.invoice_date >= $${paramIndex++}`;
+    params.push(date_from);
+  }
+  if (date_to) {
+    whereClause += ` AND i.invoice_date <= $${paramIndex++}`;
+    params.push(date_to);
+  }
+
+  const countResult = await pool.query(`
+    SELECT COUNT(*) as total FROM (
+      SELECT 1 FROM invoice i
+      JOIN customer c ON c.id = i.customer_id
+      JOIN invoice_line_item li ON li.invoice_id = i.id
+      JOIN product p ON p.id = li.product_id
+      ${whereClause}
+      GROUP BY p.id, c.id
+    ) sub
+  `, params);
+  const total = Number(countResult.rows[0].total);
+
   const { rows } = await pool.query(`
-    select p.code as product_code, p.name as product_name,
-           c.code as customer_code, c.name as customer_name,
-           sum(li.quantity) as quantity_sold,
-           sum(li.extended_price) as value_sold
-    from invoice i
-    join customer c on c.id = i.customer_id
-    join invoice_line_item li on li.invoice_id = i.id
-    join product p on p.id = li.product_id
-    group by p.code, p.name, c.code, c.name
-    order by p.code, c.code
-  `);
-  res.json(rows);
+    SELECT p.id as product_id, p.code as product_code, p.name as product_name,
+           c.id as customer_id, c.code as customer_code, c.name as customer_name,
+           SUM(li.quantity) as quantity_sold,
+           SUM(li.extended_price) as value_sold
+    FROM invoice i
+    JOIN customer c ON c.id = i.customer_id
+    JOIN invoice_line_item li ON li.invoice_id = i.id
+    JOIN product p ON p.id = li.product_id
+    ${whereClause}
+    GROUP BY p.id, p.code, p.name, c.id, c.code, c.name
+    ORDER BY p.code, c.code
+    LIMIT $${paramIndex++} OFFSET $${paramIndex++}
+  `, [...params, Number(limit), offset]);
+  
+  res.json({ data: rows, total, page: Number(page), limit: Number(limit), totalPages: Math.ceil(total / Number(limit)) });
 }
 
-// Sales grouped by calendar month and product
 export async function getSalesByProductMonthlySummary(req, res) {
+  const { product_id, year, month, date_from, date_to, page = 1, limit = 10 } = req.query;
+  const offset = (Number(page) - 1) * Number(limit);
+  
+  let whereClause = "WHERE 1=1";
+  const params = [];
+  let paramIndex = 1;
+
+  if (product_id) {
+    whereClause += ` AND p.id = $${paramIndex++}`;
+    params.push(product_id);
+  }
+  if (year) {
+    whereClause += ` AND EXTRACT(year FROM i.invoice_date) = $${paramIndex++}`;
+    params.push(year);
+  }
+  if (month) {
+    whereClause += ` AND EXTRACT(month FROM i.invoice_date) = $${paramIndex++}`;
+    params.push(month);
+  }
+  if (date_from) {
+    whereClause += ` AND i.invoice_date >= $${paramIndex++}`;
+    params.push(date_from);
+  }
+  if (date_to) {
+    whereClause += ` AND i.invoice_date <= $${paramIndex++}`;
+    params.push(date_to);
+  }
+
+  const countResult = await pool.query(`
+    SELECT COUNT(*) as total FROM (
+      SELECT 1 FROM invoice_line_item li
+      JOIN invoice i ON i.id = li.invoice_id
+      JOIN product p ON p.id = li.product_id
+      ${whereClause}
+      GROUP BY EXTRACT(year FROM i.invoice_date), EXTRACT(month FROM i.invoice_date), p.id
+    ) sub
+  `, params);
+  const total = Number(countResult.rows[0].total);
+
   const { rows } = await pool.query(`
-    select
-      extract(year from i.invoice_date) as year,
-      extract(month from i.invoice_date) as month,
+    SELECT
+      EXTRACT(year FROM i.invoice_date) as year,
+      EXTRACT(month FROM i.invoice_date) as month,
+      p.id as product_id,
       p.code as product_code,
       p.name as product_name,
-      sum(li.quantity) as quantity_sold,
-      sum(li.extended_price) as value_sold
-    from invoice_line_item li
-    join invoice i on i.id = li.invoice_id
-    join product p on p.id = li.product_id
-    group by year, month, p.code, p.name
-    order by year, month, sum(li.extended_price) desc
-  `);
-  res.json(rows);
+      SUM(li.quantity) as quantity_sold,
+      SUM(li.extended_price) as value_sold
+    FROM invoice_line_item li
+    JOIN invoice i ON i.id = li.invoice_id
+    JOIN product p ON p.id = li.product_id
+    ${whereClause}
+    GROUP BY year, month, p.id, p.code, p.name
+    ORDER BY year DESC, month DESC, SUM(li.extended_price) DESC
+    LIMIT $${paramIndex++} OFFSET $${paramIndex++}
+  `, [...params, Number(limit), offset]);
+  
+  res.json({ data: rows, total, page: Number(page), limit: Number(limit), totalPages: Math.ceil(total / Number(limit)) });
 }
-
-// Cleanup previous functions

@@ -3,26 +3,28 @@ import React from "react";
 import { listProducts, deleteProduct } from "../../api/products.api.js";
 import { formatBaht } from "../../utils.js";
 import DataList from "../../components/DataList.jsx";
+import { ConfirmModal, AlertModal } from "../../components/Modal.jsx";
 
 export default function ProductList() {
     const fetchData = React.useCallback((params) => listProducts(params), []);
+    const [confirmModal, setConfirmModal] = React.useState({ isOpen: false, id: null, force: false });
+    const [alertModal, setAlertModal] = React.useState({ isOpen: false, message: "" });
 
     const handleDelete = async (id) => {
-        if (!window.confirm("Are you sure you want to delete this product?")) return;
+        setConfirmModal({ isOpen: true, id, force: false });
+    };
+
+    const confirmDelete = async () => {
         try {
-            await deleteProduct(id);
+            await deleteProduct(confirmModal.id, confirmModal.force);
+            setConfirmModal({ isOpen: false, id: null, force: false });
         } catch (e) {
             const msg = String(e.message || e);
             if (msg.includes("Cannot delete product because it is used in invoices")) {
-                if (window.confirm("This product is used in invoices. Do you want to delete the product AND all related invoices?")) {
-                    try {
-                        await deleteProduct(id, true);
-                    } catch (err) {
-                        alert("Error: " + String(err.message || err));
-                    }
-                }
+                setConfirmModal({ isOpen: true, id: confirmModal.id, force: true });
             } else {
-                alert("Error: " + msg);
+                setAlertModal({ isOpen: true, message: "Error: " + msg });
+                setConfirmModal({ isOpen: false, id: null, force: false });
             }
         }
     };
@@ -35,14 +37,32 @@ export default function ProductList() {
     ];
 
     return (
-        <DataList
-            title="Products"
-            fetchData={fetchData}
-            columns={columns}
-            searchPlaceholder="Search code, name, unit..."
-            itemName="products"
-            basePath="/products"
-            onDelete={handleDelete}
-        />
+        <>
+            <ConfirmModal
+                isOpen={confirmModal.isOpen}
+                onClose={() => setConfirmModal({ isOpen: false, id: null, force: false })}
+                onConfirm={confirmDelete}
+                title="Delete Product"
+                message={confirmModal.force 
+                    ? "This product is used in invoices. Do you want to delete the product AND all related invoices?"
+                    : "Are you sure you want to delete this product?"}
+                confirmText="Delete"
+            />
+            <AlertModal
+                isOpen={alertModal.isOpen}
+                onClose={() => setAlertModal({ isOpen: false, message: "" })}
+                title="Error"
+                message={alertModal.message}
+            />
+            <DataList
+                title="Products"
+                fetchData={fetchData}
+                columns={columns}
+                searchPlaceholder="Search code, name, unit..."
+                itemName="products"
+                basePath="/products"
+                onDelete={handleDelete}
+            />
+        </>
     );
 }
