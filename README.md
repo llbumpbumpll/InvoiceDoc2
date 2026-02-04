@@ -5,11 +5,52 @@ A full-stack Invoice Management System built with React, Express, and PostgreSQL
 ## 🚀 Quick Start
 
 ### Prerequisites
-- Node.js (v18+)
-- Docker Desktop (for database)
+- Node.js (v18+) - for local development
+- Docker Desktop - for Docker deployment or database only
 - npm or yarn
 
-### 1. Database Setup
+### Option 1: Docker Deployment (Recommended)
+
+Run everything with Docker Compose:
+
+```bash
+# Start all services (database, server, client)
+./docker-start.sh
+
+# Or using npm
+npm run docker:start
+
+# Or using docker-compose directly
+docker-compose up -d --build
+```
+
+**Access URLs:**
+- Client: http://localhost:3000
+- Server API: http://localhost:4000
+- Database: localhost:15432
+- Adminer (DB Admin): http://localhost:8080
+
+**Useful Commands:**
+```bash
+# Stop services
+./docker-stop.sh
+# or
+npm run docker:stop
+
+# View logs
+./docker-logs.sh
+# or view specific service
+./docker-logs.sh server
+
+# Check status
+docker-compose ps
+```
+
+For detailed Docker documentation, see [README.DOCKER.md](./README.DOCKER.md)
+
+### Option 2: Local Development Setup
+
+#### 1. Database Setup
 
 Start PostgreSQL using Docker Compose:
 
@@ -37,7 +78,7 @@ PGPASSWORD=root psql -h localhost -p 15432 -U root -d invoices_db -f sql/sql_run
 - Password: `root`
 - Adminer (Web UI): http://localhost:8080
 
-### 2. Server Setup
+#### 2. Server Setup
 
 ```bash
 cd server
@@ -52,7 +93,7 @@ Server runs on: http://localhost:4000
 - `PORT`: Server port (default: 4000)
 - `DATABASE_URL`: PostgreSQL connection string (default: `postgresql://root:root@localhost:15432/invoices_db`)
 
-### 3. Client Setup
+#### 3. Client Setup
 
 ```bash
 cd client
@@ -76,18 +117,25 @@ InvoiceDoc2/
 │   │   ├── components/    # Reusable UI components
 │   │   ├── pages/         # Page views
 │   │   └── utils.js       # Utility functions
+│   ├── Dockerfile         # Docker build for client
 │   └── package.json
 ├── server/                # Express backend
 │   ├── src/
 │   │   ├── controllers/   # Business logic
 │   │   ├── routes/        # API routes
 │   │   └── db/            # Database connection
+│   ├── Dockerfile         # Docker build for server
 │   └── package.json
-└── database/              # PostgreSQL setup
-    ├── compose.yaml       # Docker Compose config
-    ├── sql/               # SQL scripts
-    ├── data/              # CSV test data
-    └── setup_db.sh        # Database setup script
+├── database/              # PostgreSQL setup
+│   ├── compose.yaml       # Docker Compose config (database only)
+│   ├── sql/               # SQL scripts
+│   ├── data/              # CSV test data
+│   └── setup_db.sh        # Database setup script
+├── docker-compose.yml     # Docker Compose for full stack
+├── docker-start.sh        # Start script
+├── docker-stop.sh         # Stop script
+├── docker-logs.sh         # Logs script
+└── README.DOCKER.md       # Docker documentation
 ```
 
 ## 🎯 Features
@@ -95,52 +143,74 @@ InvoiceDoc2/
 ### Invoice Management
 - ✅ Create, view, edit, and delete invoices
 - ✅ Auto-generate invoice numbers (`INV-001`, `INV-002`, ...)
-- ✅ Multiple line items per invoice
+- ✅ Multiple line items per invoice with auto-merge duplicates
 - ✅ Automatic VAT calculation
 - ✅ Print/PDF export with optimized styling
+- ✅ Server-side search for customers and products
 
 ### Master Data Management
 - ✅ **Customers**: Full CRUD with auto-code generation (`C{ID}`)
 - ✅ **Products**: Full CRUD with auto-code generation (`P{ID}`)
 - ✅ Cascading delete with force delete option
+- ✅ Server-side search and pagination
 
 ### Reports & Analytics
 - ✅ Sales reports by product and customer
-- ✅ Business analytics dashboard
+- ✅ Monthly sales reports
+- ✅ Advanced filtering (product, customer, date range, year/month)
+- ✅ Table sorting and pagination
+- ✅ Custom modals for alerts and confirmations
+
+### UI/UX Enhancements
+- ✅ Responsive design with mobile warning
+- ✅ Loading indicators on all pages
+- ✅ Custom modal components (replacing browser alerts)
+- ✅ Collapsible navigation submenus
+- ✅ Empty states and user-friendly messages
 
 ## 🔌 API Endpoints
 
 ### Customers
-- `GET /api/customers` - List all customers
+- `GET /api/customers` - List customers (supports `search`, `page`, `limit`, `sortBy`, `sortDir`)
 - `GET /api/customers/:id` - Get customer by ID
 - `POST /api/customers` - Create customer
 - `PUT /api/customers/:id` - Update customer
 - `DELETE /api/customers/:id` - Delete customer (with force delete option)
 
 ### Products
-- `GET /api/products` - List all products
+- `GET /api/products` - List products (supports `search`, `page`, `limit`, `sortBy`, `sortDir`)
 - `GET /api/products/:id` - Get product by ID
 - `POST /api/products` - Create product
 - `PUT /api/products/:id` - Update product
 - `DELETE /api/products/:id` - Delete product (with force delete option)
 
 ### Invoices
-- `GET /api/invoices` - List all invoices
+- `GET /api/invoices` - List invoices (supports `page`, `limit`, `sortBy`, `sortDir`)
 - `GET /api/invoices/:id` - Get invoice with line items
 - `POST /api/invoices` - Create invoice
 - `PUT /api/invoices/:id` - Update invoice
 - `DELETE /api/invoices/:id` - Delete invoice
 
 ### Reports
-- `GET /api/reports/sales-by-product` - Sales by product
-- `GET /api/reports/sales-by-customer` - Sales by customer
+- `GET /api/reports/sales-by-product` - Sales by product (supports filters, pagination, sorting)
+- `GET /api/reports/sales-by-customer` - Sales by customer (supports filters, pagination, sorting)
+- `GET /api/reports/sales-by-product-monthly` - Monthly sales by product (supports filters, pagination, sorting)
+
+**Report Filters:**
+- `product_id` - Filter by product
+- `customer_id` - Filter by customer
+- `date_from` / `date_to` - Date range filter
+- `year` / `month` - Year/month filter
+- `page` / `limit` - Pagination
+- `sortBy` / `sortDir` - Sorting
 
 ## 🛠 Tech Stack
 
 - **Frontend**: React 18, React Router 6, Vite 5
 - **Backend**: Node.js, Express 4, pg (PostgreSQL client), Zod (validation)
 - **Database**: PostgreSQL 17 (Docker)
-- **Tools**: Docker Compose, Adminer
+- **Deployment**: Docker, Docker Compose
+- **Tools**: Adminer, serve (static file server)
 
 ## 📝 Development Notes
 
@@ -152,6 +222,14 @@ InvoiceDoc2/
 ### Cascading Deletes
 - **Customer Delete**: Prevents deletion if invoices exist. Force delete removes customer and all related invoices.
 - **Product Delete**: Prevents deletion if product is in invoices. Force delete removes product and all invoices containing it.
+
+### Line Items Auto-Merge
+- When adding duplicate products to an invoice, quantities are automatically merged instead of creating separate line items.
+
+### Server-Side Search
+- Customer and Product dropdowns use server-side search with debouncing
+- Initial load limited to 10 items for better performance
+- Search queries executed when user types
 
 ### Database Schema
 - `country` - Country master data
@@ -172,10 +250,18 @@ If you see `relation "invoice" does not exist`:
 ### Port Already in Use
 - Change `PORT` in `server/.env` for backend
 - Change port in `client/vite.config.js` for frontend
-- Change port mapping in `database/compose.yaml` for database
+- Change port mapping in `docker-compose.yml` for Docker deployment
+- Change port mapping in `database/compose.yaml` for database only
+
+### Docker Issues
+- **Port conflict**: Stop existing containers using the same ports
+- **Build errors**: Check Docker Desktop is running and has enough resources
+- **Platform issues**: Docker Compose is configured for `linux/amd64` platform
+- See [README.DOCKER.md](./README.DOCKER.md) for detailed troubleshooting
 
 ## 📚 Additional Documentation
 
+- [README.DOCKER.md](./README.DOCKER.md) - Docker deployment guide
 - [GUIDE.md](./GUIDE.md) - Detailed project guide (Thai/English)
 - [PROJECT_STRUCTURE.md](./PROJECT_STRUCTURE.md) - Detailed project structure
 
