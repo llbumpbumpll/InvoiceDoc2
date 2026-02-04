@@ -12,7 +12,7 @@ export async function getInvoicesMonthlySummary(req, res) {
 }
 
 export async function getSalesByProductSummary(req, res) {
-  const { product_id, date_from, date_to, page = 1, limit = 10 } = req.query;
+  const { product_id, date_from, date_to, page = 1, limit = 10, sortBy = 'value_sold', sortDir = 'desc' } = req.query;
   const offset = (Number(page) - 1) * Number(limit);
   
   let whereClause = "WHERE 1=1";
@@ -32,6 +32,15 @@ export async function getSalesByProductSummary(req, res) {
     params.push(date_to);
   }
 
+  const allowedSort = {
+    'product_code': 'p.code',
+    'product_name': 'p.name',
+    'quantity_sold': 'SUM(li.quantity)',
+    'value_sold': 'SUM(li.extended_price)'
+  };
+  const sortColumn = allowedSort[sortBy] || allowedSort['value_sold'];
+  const sortDirection = sortDir === 'asc' ? 'ASC' : 'DESC';
+
   const countResult = await pool.query(`
     SELECT COUNT(DISTINCT p.id) as total
     FROM invoice_line_item li
@@ -50,7 +59,7 @@ export async function getSalesByProductSummary(req, res) {
     JOIN invoice i ON i.id = li.invoice_id
     ${whereClause}
     GROUP BY p.id, p.code, p.name
-    ORDER BY SUM(li.extended_price) DESC
+    ORDER BY ${sortColumn} ${sortDirection}
     LIMIT $${paramIndex++} OFFSET $${paramIndex++}
   `, [...params, Number(limit), offset]);
   
@@ -58,7 +67,7 @@ export async function getSalesByProductSummary(req, res) {
 }
 
 export async function getSalesByCustomerSummary(req, res) {
-  const { product_id, customer_id, date_from, date_to, page = 1, limit = 10 } = req.query;
+  const { product_id, customer_id, date_from, date_to, page = 1, limit = 10, sortBy = 'product_code', sortDir = 'asc' } = req.query;
   const offset = (Number(page) - 1) * Number(limit);
   
   let whereClause = "WHERE 1=1";
@@ -81,6 +90,17 @@ export async function getSalesByCustomerSummary(req, res) {
     whereClause += ` AND i.invoice_date <= $${paramIndex++}`;
     params.push(date_to);
   }
+
+  const allowedSort = {
+    'product_code': 'p.code',
+    'product_name': 'p.name',
+    'customer_code': 'c.code',
+    'customer_name': 'c.name',
+    'quantity_sold': 'SUM(li.quantity)',
+    'value_sold': 'SUM(li.extended_price)'
+  };
+  const sortColumn = allowedSort[sortBy] || allowedSort['product_code'];
+  const sortDirection = sortDir === 'asc' ? 'ASC' : 'DESC';
 
   const countResult = await pool.query(`
     SELECT COUNT(*) as total FROM (
@@ -105,7 +125,7 @@ export async function getSalesByCustomerSummary(req, res) {
     JOIN product p ON p.id = li.product_id
     ${whereClause}
     GROUP BY p.id, p.code, p.name, c.id, c.code, c.name
-    ORDER BY p.code, c.code
+    ORDER BY ${sortColumn} ${sortDirection}
     LIMIT $${paramIndex++} OFFSET $${paramIndex++}
   `, [...params, Number(limit), offset]);
   
@@ -113,7 +133,7 @@ export async function getSalesByCustomerSummary(req, res) {
 }
 
 export async function getSalesByProductMonthlySummary(req, res) {
-  const { product_id, year, month, date_from, date_to, page = 1, limit = 10 } = req.query;
+  const { product_id, year, month, date_from, date_to, page = 1, limit = 10, sortBy = 'year', sortDir = 'desc' } = req.query;
   const offset = (Number(page) - 1) * Number(limit);
   
   let whereClause = "WHERE 1=1";
@@ -141,6 +161,17 @@ export async function getSalesByProductMonthlySummary(req, res) {
     params.push(date_to);
   }
 
+  const allowedSort = {
+    'year': 'year',
+    'month': 'month',
+    'product_code': 'p.code',
+    'product_name': 'p.name',
+    'quantity_sold': 'SUM(li.quantity)',
+    'value_sold': 'SUM(li.extended_price)'
+  };
+  const sortColumn = allowedSort[sortBy] || allowedSort['year'];
+  const sortDirection = sortDir === 'asc' ? 'ASC' : 'DESC';
+
   const countResult = await pool.query(`
     SELECT COUNT(*) as total FROM (
       SELECT 1 FROM invoice_line_item li
@@ -166,7 +197,7 @@ export async function getSalesByProductMonthlySummary(req, res) {
     JOIN product p ON p.id = li.product_id
     ${whereClause}
     GROUP BY year, month, p.id, p.code, p.name
-    ORDER BY year DESC, month DESC, SUM(li.extended_price) DESC
+    ORDER BY ${sortColumn} ${sortDirection}${sortBy === 'year' && sortDir === 'desc' ? ', month DESC' : sortBy === 'year' ? ', month ASC' : ''}${sortBy === 'month' && sortDir === 'desc' ? ', year DESC' : sortBy === 'month' ? ', year ASC' : ''}${!['year', 'month'].includes(sortBy) ? ', year DESC, month DESC' : ''}
     LIMIT $${paramIndex++} OFFSET $${paramIndex++}
   `, [...params, Number(limit), offset]);
   
