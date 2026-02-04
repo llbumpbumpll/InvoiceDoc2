@@ -1,15 +1,71 @@
 # Environment files (secrets)
 .env
+.env.local
+.env.*.local
 client/.env
+client/.env.local
 server/.env
+server/.env.local
 
-# Node
+# Dependencies
 node_modules/
 client/node_modules/
 server/node_modules/
+# Note: package-lock.json should be committed for consistent installs
+yarn.lock
+pnpm-lock.yaml
 
 # Build outputs
 client/dist/
+client/build/
 server/dist/
+server/build/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
+# Database
+database/db-data/
+database/pgdata/
+*.db
+*.sqlite
+*.sqlite3
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+*.swp
+*.swo
+*~
+
+# IDE / Editor
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+*.code-workspace
+*.iml
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+.parcel-cache/
+.vite/
+
+# Test coverage
+coverage/
+.nyc_output/
+*.lcov
+
+# Misc
 TA_TEMPLATE.md
+*.bak
+*.backup
