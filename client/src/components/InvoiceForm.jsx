@@ -3,6 +3,7 @@
 import React from "react";
 import LineItemsEditor from "./LineItemsEditor.jsx";
 import SearchableSelect from "./SearchableSelect.jsx";
+import { AlertModal } from "./Modal.jsx";
 import { formatBaht } from "../utils.js";
 
 export default function InvoiceForm({ searchCustomers, searchProducts, onSubmit, submitting, initialData }) {
@@ -13,6 +14,7 @@ export default function InvoiceForm({ searchCustomers, searchProducts, onSubmit,
   const [invoiceDate, setInvoiceDate] = React.useState(new Date().toISOString().slice(0, 10));
   const [vatRate, setVatRate] = React.useState(0.07);
   const [items, setItems] = React.useState([{ product_id: "", quantity: 1, unit_price: 0 }]);
+  const [alertModal, setAlertModal] = React.useState({ isOpen: false, message: "" });
 
   React.useEffect(() => {
     if (initialData) {
@@ -48,13 +50,13 @@ export default function InvoiceForm({ searchCustomers, searchProducts, onSubmit,
     
     // Validate: customer must be selected
     if (hasEmptyCustomer) {
-      alert('Please select a customer');
+      setAlertModal({ isOpen: true, message: 'Please select a customer' });
       return;
     }
     
     // Validate: all items must have a product selected
     if (hasEmptyProduct) {
-      alert('Please select a product for all items');
+      setAlertModal({ isOpen: true, message: 'Please select a product for all items' });
       return;
     }
     
@@ -73,7 +75,14 @@ export default function InvoiceForm({ searchCustomers, searchProducts, onSubmit,
   }
 
   return (
-    <form onSubmit={handleSubmit} className="invoice-form">
+    <>
+      <AlertModal
+        isOpen={alertModal.isOpen}
+        onClose={() => setAlertModal({ isOpen: false, message: "" })}
+        title="Validation Error"
+        message={alertModal.message}
+      />
+      <form onSubmit={handleSubmit} className="invoice-form">
       {/* Example usage: fill fields, then submit to create/update */}
       <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 24, marginBottom: 24 }}>
 
@@ -187,5 +196,6 @@ export default function InvoiceForm({ searchCustomers, searchProducts, onSubmit,
 
       <LineItemsEditor searchProducts={searchProducts} value={items} onChange={setItems} />
     </form>
+    </>
   );
 }

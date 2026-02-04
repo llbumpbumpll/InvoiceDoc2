@@ -3,26 +3,28 @@ import React from "react";
 import { listCustomers, deleteCustomer } from "../../api/customers.api.js";
 import { formatBaht } from "../../utils.js";
 import DataList from "../../components/DataList.jsx";
+import { ConfirmModal, AlertModal } from "../../components/Modal.jsx";
 
 export default function CustomerList() {
     const fetchData = React.useCallback((params) => listCustomers(params), []);
+    const [confirmModal, setConfirmModal] = React.useState({ isOpen: false, id: null, force: false });
+    const [alertModal, setAlertModal] = React.useState({ isOpen: false, message: "" });
 
     const handleDelete = async (id) => {
-        if (!window.confirm("Are you sure you want to delete this customer?")) return;
+        setConfirmModal({ isOpen: true, id, force: false });
+    };
+
+    const confirmDelete = async () => {
         try {
-            await deleteCustomer(id);
+            await deleteCustomer(confirmModal.id, confirmModal.force);
+            setConfirmModal({ isOpen: false, id: null, force: false });
         } catch (e) {
             const msg = String(e.message || e);
             if (msg.includes("Cannot delete customer because they have existing invoices")) {
-                if (window.confirm("This customer has invoices. Do you want to delete the customer AND all their invoices?")) {
-                    try {
-                        await deleteCustomer(id, true);
-                    } catch (err) {
-                        alert("Error: " + String(err.message || err));
-                    }
-                }
+                setConfirmModal({ isOpen: true, id: confirmModal.id, force: true });
             } else {
-                alert("Error: " + msg);
+                setAlertModal({ isOpen: true, message: "Error: " + msg });
+                setConfirmModal({ isOpen: false, id: null, force: false });
             }
         }
     };
@@ -40,14 +42,32 @@ export default function CustomerList() {
     ];
 
     return (
-        <DataList
-            title="Customers"
-            fetchData={fetchData}
-            columns={columns}
-            searchPlaceholder="Search code, name, address..."
-            itemName="customers"
-            basePath="/customers"
-            onDelete={handleDelete}
-        />
+        <>
+            <ConfirmModal
+                isOpen={confirmModal.isOpen}
+                onClose={() => setConfirmModal({ isOpen: false, id: null, force: false })}
+                onConfirm={confirmDelete}
+                title="Delete Customer"
+                message={confirmModal.force 
+                    ? "This customer has invoices. Do you want to delete the customer AND all their invoices?"
+                    : "Are you sure you want to delete this customer?"}
+                confirmText="Delete"
+            />
+            <AlertModal
+                isOpen={alertModal.isOpen}
+                onClose={() => setAlertModal({ isOpen: false, message: "" })}
+                title="Error"
+                message={alertModal.message}
+            />
+            <DataList
+                title="Customers"
+                fetchData={fetchData}
+                columns={columns}
+                searchPlaceholder="Search code, name, address..."
+                itemName="customers"
+                basePath="/customers"
+                onDelete={handleDelete}
+            />
+        </>
     );
 }
