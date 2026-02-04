@@ -9,6 +9,7 @@ import { listProducts } from "../../api/products.api.js";
 import { getInvoice, createInvoice, updateInvoice } from "../../api/invoices.api.js";
 import { formatBaht, formatDate } from "../../utils.js";
 import InvoiceForm from "../../components/InvoiceForm.jsx";
+import Loading from "../../components/Loading.jsx";
 
 export default function InvoicePage({ mode: propMode }) {
     const { id } = useParams();
@@ -121,7 +122,7 @@ export default function InvoicePage({ mode: propMode }) {
 
     const handlePrint = () => window.print();
 
-    if (loading) return <div className="text-center mt-4">Loading...</div>;
+    if (loading) return <Loading size="large" />;
     if (err) return <div className="alert alert-error">{err}</div>;
 
     const isView = mode === "view";
