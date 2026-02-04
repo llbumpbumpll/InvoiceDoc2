@@ -2,6 +2,7 @@
 // Usage: <DataList columns={[...]} fetchData={fn} ... />
 import React from "react";
 import { Link } from "react-router-dom";
+import { TableLoading } from "./Loading.jsx";
 
 const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
 
@@ -194,8 +195,7 @@ export default function DataList({
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                         <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-                            {total > 0 ? `${startIndex + 1}-${endIndex} of ${total}` : `0`} {itemName}
-                            {loading && " ..."}
+                            {loading ? "Loading..." : total > 0 ? `${startIndex + 1}-${endIndex} of ${total}` : `0`} {itemName}
                         </span>
                         <select 
                             value={pageSize} 
@@ -232,43 +232,49 @@ export default function DataList({
                             </tr>
                         </thead>
                         <tbody>
-                            {data.map(item => (
-                                <tr key={item.id}>
-                                    {columns.map((col, idx) => (
-                                        <td key={col.key} className={col.align === 'right' ? 'text-right' : ''} style={col.style}>
-                                            {idx === 0 ? (
-                                                <Link to={`${basePath}/${item.id}`} style={{ fontWeight: 500, color: 'var(--primary)' }}>
-                                                    {col.render ? col.render(item[col.key], item) : item[col.key]}
+                            {loading ? (
+                                <TableLoading colSpan={columns.length + 1} />
+                            ) : (
+                                <>
+                                    {data.map(item => (
+                                        <tr key={item.id}>
+                                            {columns.map((col, idx) => (
+                                                <td key={col.key} className={col.align === 'right' ? 'text-right' : ''} style={col.style}>
+                                                    {idx === 0 ? (
+                                                        <Link to={`${basePath}/${item.id}`} style={{ fontWeight: 500, color: 'var(--primary)' }}>
+                                                            {col.render ? col.render(item[col.key], item) : item[col.key]}
+                                                        </Link>
+                                                    ) : (
+                                                        col.render ? col.render(item[col.key], item) : item[col.key]
+                                                    )}
+                                                </td>
+                                            ))}
+                                            <td className="text-right">
+                                                <Link 
+                                                    to={`${basePath}/${item.id}/edit`} 
+                                                    className="btn btn-outline" 
+                                                    style={{ fontSize: '0.7rem', padding: '4px 8px', marginRight: 8 }}
+                                                >
+                                                    Edit
                                                 </Link>
-                                            ) : (
-                                                col.render ? col.render(item[col.key], item) : item[col.key]
-                                            )}
-                                        </td>
+                                                <button
+                                                    onClick={() => handleDelete(item.id)}
+                                                    className="btn btn-outline"
+                                                    style={{ fontSize: '0.7rem', padding: '4px 8px', color: '#ef4444', borderColor: '#ef4444' }}
+                                                >
+                                                    Delete
+                                                </button>
+                                            </td>
+                                        </tr>
                                     ))}
-                                    <td className="text-right">
-                                        <Link 
-                                            to={`${basePath}/${item.id}/edit`} 
-                                            className="btn btn-outline" 
-                                            style={{ fontSize: '0.7rem', padding: '4px 8px', marginRight: 8 }}
-                                        >
-                                            Edit
-                                        </Link>
-                                        <button
-                                            onClick={() => handleDelete(item.id)}
-                                            className="btn btn-outline"
-                                            style={{ fontSize: '0.7rem', padding: '4px 8px', color: '#ef4444', borderColor: '#ef4444' }}
-                                        >
-                                            Delete
-                                        </button>
-                                    </td>
-                                </tr>
-                            ))}
-                            {!loading && data.length === 0 && (
-                                <tr>
-                                    <td colSpan={columns.length + 1} style={{ textAlign: "center", padding: 32, color: "var(--text-muted)" }}>
-                                        {search ? `No matching ${itemName} found.` : (emptyMessage || `No ${itemName} found. Create one to get started.`)}
-                                    </td>
-                                </tr>
+                                    {data.length === 0 && (
+                                        <tr>
+                                            <td colSpan={columns.length + 1} style={{ textAlign: "center", padding: 32, color: "var(--text-muted)" }}>
+                                                {search ? `No matching ${itemName} found.` : (emptyMessage || `No ${itemName} found. Create one to get started.`)}
+                                            </td>
+                                        </tr>
+                                    )}
+                                </>
                             )}
                         </tbody>
                     </table>

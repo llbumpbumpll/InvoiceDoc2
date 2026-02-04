@@ -6,6 +6,7 @@ import React from "react";
 import { useNavigate, Link, useParams } from "react-router-dom";
 import { listUnits, getProduct, createProduct, updateProduct } from "../../api/products.api.js";
 import { formatBaht } from "../../utils.js";
+import Loading from "../../components/Loading.jsx";
 
 export default function ProductPage({ mode: propMode }) {
     const { id } = useParams();
@@ -71,7 +72,7 @@ export default function ProductPage({ mode: propMode }) {
         }
     };
 
-    if (loading) return <div className="text-center mt-4">Loading...</div>;
+    if (loading) return <Loading size="large" />;
     if (err) return <div className="alert alert-error">{err}</div>;
 
     const isView = mode === "view";
