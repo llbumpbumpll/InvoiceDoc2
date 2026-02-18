@@ -1,20 +1,7 @@
 // Invoice controller (ตรรกะจัดการใบแจ้งหนี้)
 // Example usage: listInvoices -> GET /api/invoices
-import { z } from "zod";
 import * as invoicesService from "../services/invoices.service.js";
-
-// Schema validation for creating/updating invoices
-const CreateInvoiceSchema = z.object({
-  invoice_no: z.string().optional(), // Optional for auto-generation
-  customer_id: z.number().int(),
-  invoice_date: z.string().min(8), // YYYY-MM-DD
-  vat_rate: z.number().min(0).max(1).default(0.07),
-  line_items: z.array(z.object({
-    product_id: z.number().int(),
-    quantity: z.number().positive(),
-    unit_price: z.number().nonnegative().optional()
-  })).min(1)
-});
+import { CreateInvoiceSchema } from "../models/invoice.model.js";
 
 // GET list of invoices with pagination, search, sort
 export async function listInvoices(req, res) {
