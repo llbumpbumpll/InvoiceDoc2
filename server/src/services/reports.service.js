@@ -1,3 +1,4 @@
+// Report queries: sales by product, monthly sales, customer buying. All filters via parameterized queries.
 import { pool } from "../db/pool.js";
 
 export async function getInvoicesMonthlySummary() {

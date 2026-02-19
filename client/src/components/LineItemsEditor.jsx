@@ -1,4 +1,4 @@
-// Line items table editor for invoice (add/remove/reorder rows)
+// Line items table: add/remove/reorder rows, insert row between. Drag-and-drop and up/down buttons.
 // Example usage: <LineItemsEditor searchProducts={async (q) => [...]} value={items} onChange={setItems} />
 import React, { useState } from "react";
 import { formatBaht } from "../utils.js";
@@ -15,12 +15,19 @@ export default function LineItemsEditor({ searchProducts, value, onChange }) {
         onChange(next);
     }
 
-    // Add a new row with empty product (user must select)
+    // Add a new row with empty product (user must select) at the end
     function addRow() {
         onChange([
             ...items,
             { product_id: "", quantity: 1, unit_price: 0 },
         ]);
+    }
+
+    // Insert a new empty row after index i (add row in between)
+    function insertRowAfter(i) {
+        const newRow = { product_id: "", quantity: 1, unit_price: 0 };
+        const next = [...items.slice(0, i + 1), newRow, ...items.slice(i + 1)];
+        onChange(next);
     }
 
     // Remove a row by index
@@ -204,7 +211,7 @@ export default function LineItemsEditor({ searchProducts, value, onChange }) {
                             <th style={{ width: '12%' }} className="text-right">Qty</th>
                             <th style={{ width: '14%' }} className="text-right">Unit Price</th>
                             <th style={{ width: '14%' }} className="text-right">Extended</th>
-                            <th style={{ width: '80px' }} className="text-center">Actions</th>
+                            <th style={{ width: '100px' }} className="text-center">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -336,6 +343,19 @@ export default function LineItemsEditor({ searchProducts, value, onChange }) {
                                                 title="Move down"
                                             >
                                                 <ArrowDownIcon />
+                                            </button>
+                                            
+                                            {/* Insert row below (add in between) */}
+                                            <button 
+                                                type="button" 
+                                                onClick={() => insertRowAfter(i)} 
+                                                style={actionBtnStyle}
+                                                title="Insert row below"
+                                            >
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                                                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                                                </svg>
                                             </button>
                                             
                                             {/* Remove */}

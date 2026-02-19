@@ -1,57 +1,71 @@
 # Project Structure and Documentation
 
 ## Overview
-This project is an Invoice Management System with FULL CRUD capabilities for Customers, Products, and Invoices.
-It uses a React frontend (Vite) and a Node.js/Express backend with PostgreSQL.
+This project is an Invoice Management System with full CRUD for Customers, Products, and Invoices, plus Reports.
+Stack: React (Vite) frontend, Node.js/Express backend, PostgreSQL.
 
 ## Directory Structure
 
 ### `client/`
-Frontend application built with React.
+Frontend (React 18, Vite 5).
 
--   `src/api/`: Contains API client functions (`http.js` wrapper).
-    -   `customers.api.js`: API calls for customers.
-    -   `products.api.js`: API calls for products.
-    -   `invoices.api.js`: API calls for invoices.
--   `src/components/`: Reusable UI components.
-    -   `InvoiceForm.jsx`: Complex form for creating/editing invoices with line items.
-    -   `LineItemsEditor.jsx`: Sub-component for managing invoice line items.
--   `src/pages/`: Main page views.
-    -   `CustomerList.jsx`: Lists customers, supports Create/Edit/Delete (with cascade delete).
-    -   `ProductList.jsx`: Lists products, supports Create/Edit/Delete (with cascade delete).
-    -   `InvoiceList.jsx`: Lists invoices, supports Delete.
-    -   `InvoiceCreate.jsx`: Page to create a new invoice.
-    -   `InvoiceEdit.jsx`: Page to edit an existing invoice (modifies header and lines).
-    -   `InvoiceView.jsx`: Read-only view of a single invoice.
-    -   `Reports.jsx`: Dashboard for viewing sales reports.
+- **`src/api/`** – API client layer (all backend calls go through here).
+  - `http.js`: shared `fetch` wrapper and error handling.
+  - `customers.api.js`, `products.api.js`, `invoices.api.js`, `reports.api.js`: list/get/create/update/delete and report data.
+- **`src/components/`** – Reusable UI.
+  - `DataList.jsx`: table with server-side search, sort, pagination; used by Invoice/Customer/Product lists.
+  - `InvoiceForm.jsx`: invoice header + line items form (create/edit).
+  - `LineItemsEditor.jsx`: line items table (add/remove/reorder, insert row between).
+  - `SearchableSelect.jsx`: searchable dropdown (customer/product).
+  - `Modal.jsx`: ConfirmModal, AlertModal.
+  - `ReportTable.jsx`, `Loading.jsx`.
+- **`src/pages/`** – Page-level views.
+  - **`invoices/`**: `InvoiceList.jsx` (list), `InvoicePage.jsx` (view/create/edit by route).
+  - **`customers/`**: `CustomerList.jsx`, `CustomerPage.jsx` (view/create/edit).
+  - **`products/`**: `ProductList.jsx`, `ProductPage.jsx` (view/create/edit).
+  - **`reports/`**: `Reports.jsx` (Product Sales, Monthly Sales, Customer Buying); `filters/` for filter components and pagination.
+- **`src/main.jsx`** – App entry, routes, sidebar layout.
+- **`src/index.css`** – Global styles and CSS variables.
+- **`src/utils.js`** – formatBaht, formatDate.
 
 ### `server/`
-Backend API server built with Express.
+Backend (Express 4, Node 20).
 
--   `src/controllers/`: Logic for handling API requests.
-    -   `invoices.controller.js`: Handles Invoice CRUD. Includes transaction management for header/lines and Auto-Numbering (`INV-XXX`).
-    -   `reports.controller.js`: aggregation queries for reports.
--   `src/routes/`: Express Routes definitions.
-    -   `customers.routes.js`: Routes for Customers. Includes Force Delete logic (deletes related invoices).
-    -   `products.routes.js`: Routes for Products. Includes Force Delete logic (deletes invoices containing the product).
-    -   `invoices.routes.js`: Routes for Invoices.
--   `src/db/`: Database connection (`pool.js`).
--   `sql_run.sql`: Database schema and seed data.
+- **`src/controllers/`** – Request handlers (validate, call services, send response).
+  - `invoices.controller.js`, `reports.controller.js`; customers/products are in services.
+- **`src/routes/`** – Express route definitions.
+  - `customers.routes.js`, `products.routes.js`, `invoices.routes.js`, `reports.routes.js`.
+- **`src/services/`** – Business logic and DB queries (parameterized; no raw SQL concatenation).
+  - `customers.service.js`, `products.service.js`, `invoices.service.js`, `reports.service.js`.
+- **`src/models/`** – Zod schemas (e.g. invoice create/update).
+- **`src/db/pool.js`** – PostgreSQL connection pool.
+- **`src/utils/`** – Response helpers (e.g. success/error).
+- **`src/app.js`** – Express app and middleware.
+
+### `database/`
+PostgreSQL schema and seed data.
+
+- **`init/`** – `01_schema.sql` (run on first container start).
+- **`sql/`** – `sql_run.sql` (schema + seed), `002_import_csv.sql`.
+- **`data/`** – CSV test data.
+- **`compose.yaml`** – Database-only Docker Compose.
+- **`setup_db.sh`**, **`generate_sql_run.py`** – Run schema/seed or generate SQL from CSV.
+
+### Root
+- **`docker-compose.yml`** – Full stack (database + server + client).
+- **`README.md`** – Quick start, structure, API summary, troubleshooting.
+- **`PROJECT_STRUCTURE.md`** – This file.
+- **`GUIDE.md`** – Project guide (Thai/English).
+- **`AGENTS.md`** – Instructions for AI assistants (teaching juniors).
 
 ## Key Features
 
-### Auto-Numbering
--   **Customers**: Auto-generates `C{ID}` if code is left blank.
--   **Products**: Auto-generates `P{ID}` if code is left blank.
--   **Invoices**: Auto-generates `INV-{ID}` if Invoice No is left blank.
-
-### Cascading Deletes
--   **Customer Delete**: If a customer has invoices, the system prevents accidental deletion. The user can choose to "Force Delete," which removes the customer AND all their invoices.
--   **Product Delete**: If a product is in invoices, the system prevents deletion. The user can choose to "Force Delete," which removes the product AND all invoices that contain that product (as per user requirement).
-
-### Invoice Editing
--   Invoices can be updated. The system updates the header and fully replaces line items to ensure data consistency.
+- **Auto-numbering**: Customers `C{id}`, Products `P{id}`, Invoices `INV-{id}` when code/no is blank.
+- **Cascading deletes**: Customer/Product delete can force-delete related invoices (with confirmation).
+- **Reports**: Three report types with filters (date, product, customer, year/month); data and pagination/sort on backend.
+- **Security**: Parameterized queries only; no SQL injection from user input.
 
 ## Environment Variables
--   `PORT`: Backend server port (default 4000).
--   `DATABASE_URL`: PostgreSQL connection string.
+
+- **Server**: `PORT`, `HOST`, `DATABASE_URL`.
+- **Client**: `VITE_API_BASE` (backend API URL).
