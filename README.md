@@ -111,31 +111,46 @@ Client runs on: http://localhost:5173
 
 ```
 InvoiceDoc2/
-├── client/                 # React frontend (Vite)
+├── client/                      # React frontend (Vite)
 │   ├── src/
-│   │   ├── api/           # API client functions
-│   │   ├── components/    # Reusable UI components
-│   │   ├── pages/         # Page views
-│   │   └── utils.js       # Utility functions
-│   ├── Dockerfile         # Docker build for client
+│   │   ├── api/                 # API client (http.js, customers.api.js, products.api.js, invoices.api.js)
+│   │   ├── components/          # Reusable UI (DataList, InvoiceForm, LineItemsEditor, Modal, ReportTable, SearchableSelect, Loading)
+│   │   ├── pages/               # Page views
+│   │   │   ├── invoices/        # InvoiceList, InvoicePage (view/create/edit)
+│   │   │   ├── customers/       # CustomerList, CustomerPage
+│   │   │   ├── products/        # ProductList, ProductPage
+│   │   │   └── reports/        # Reports.jsx, filters/ (ReportFilters, DateRangeFilter, ProductFilter, etc.)
+│   │   ├── main.jsx             # App entry, routes, layout
+│   │   ├── index.css            # Global styles
+│   │   └── utils.js             # formatBaht, formatDate
+│   ├── Dockerfile
 │   └── package.json
-├── server/                # Express backend
+├── server/                      # Express backend
 │   ├── src/
-│   │   ├── controllers/   # Business logic
-│   │   ├── routes/        # API routes
-│   │   └── db/            # Database connection
-│   ├── Dockerfile         # Docker build for server
+│   │   ├── controllers/         # Request handlers (invoices, customers, products, reports)
+│   │   ├── routes/              # API route definitions
+│   │   ├── services/            # Business logic & DB queries (invoices, customers, products, reports)
+│   │   ├── models/              # Zod validation schemas (invoice, customer, product)
+│   │   ├── db/                  # PostgreSQL pool (pool.js)
+│   │   ├── utils/               # Response helpers (response.js)
+│   │   └── app.js               # Express app entry
+│   ├── Dockerfile
 │   └── package.json
-├── database/              # PostgreSQL setup
-│   ├── compose.yaml       # Docker Compose config (database only)
-│   ├── sql/               # SQL scripts
-│   ├── data/              # CSV test data
-│   └── setup_db.sh        # Database setup script
-├── docker-compose.yml     # Docker Compose for full stack
-├── docker-start.sh        # Start script
-├── docker-stop.sh         # Stop script
-├── docker-logs.sh         # Logs script
-└── README.DOCKER.md       # Docker documentation
+├── database/                    # PostgreSQL setup
+│   ├── init/                    # 01_schema.sql (run on first start)
+│   ├── sql/                     # sql_run.sql (schema + seed), 002_import_csv.sql
+│   ├── data/                    # CSV test data
+│   ├── compose.yaml             # Database-only Docker Compose
+│   ├── setup_db.sh              # Run schema/seed against running DB
+│   └── generate_sql_run.py      # Generate sql_run.sql from CSV
+├── docker-compose.yml           # Full stack (database + server + client)
+├── docker-compose.coolify.yml   # Server + client only (DB via env)
+├── docker-start.sh
+├── docker-stop.sh
+├── docker-logs.sh
+├── README.DOCKER.md             # Docker deployment guide
+├── GUIDE.md                     # Project guide (Thai/English)
+└── PROJECT_STRUCTURE.md         # Detailed structure notes
 ```
 
 ## 🎯 Features
