@@ -113,7 +113,7 @@ export async function deleteProduct(id, { force = false } = {}) {
 
 export async function listUnits() {
   const { rows } = await pool.query("SELECT id, code, name FROM units ORDER BY name");
-  return rows;
+  return { data: rows };
 }
 
 export async function getProductById(id) {

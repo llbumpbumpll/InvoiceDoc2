@@ -1,20 +1,21 @@
 import * as customersService from "../services/customers.service.js";
+import { sendList, sendData, sendOne, sendCreated, sendOk, sendError } from "../utils/response.js";
 
 export async function listCustomers(req, res) {
   try {
     const result = await customersService.listCustomers(req.query);
-    res.json(result);
+    sendList(res, result);
   } catch (err) {
-    res.status(500).json({ error: err?.message ?? String(err) });
+    sendError(res, err?.message ?? String(err), 500);
   }
 }
 
 export async function createCustomer(req, res) {
   try {
     const result = await customersService.createCustomer(req.body);
-    res.status(201).json(result);
+    sendCreated(res, result);
   } catch (err) {
-    res.status(400).json({ error: err?.message ?? String(err) });
+    sendError(res, err?.message ?? String(err), 400);
   }
 }
 
@@ -22,9 +23,9 @@ export async function updateCustomer(req, res) {
   try {
     const { id } = req.params;
     const result = await customersService.updateCustomer(id, req.body);
-    res.json(result);
+    sendOk(res, result);
   } catch (err) {
-    res.status(400).json({ error: err?.message ?? String(err) });
+    sendError(res, err?.message ?? String(err), 400);
   }
 }
 
@@ -33,18 +34,18 @@ export async function deleteCustomer(req, res) {
     const { id } = req.params;
     const force = req.query.force === "true";
     const result = await customersService.deleteCustomer(id, { force });
-    res.json(result);
+    sendOk(res, result);
   } catch (err) {
-    res.status(err?.statusCode ?? 500).json({ error: err?.message ?? String(err) });
+    sendError(res, err?.message ?? String(err), err?.statusCode ?? 500);
   }
 }
 
 export async function listCountries(_req, res) {
   try {
-    const rows = await customersService.listCountries();
-    res.json(rows);
+    const result = await customersService.listCountries();
+    sendData(res, result.data);
   } catch (err) {
-    res.status(500).json({ error: err?.message ?? String(err) });
+    sendError(res, err?.message ?? String(err), 500);
   }
 }
 
@@ -52,10 +53,9 @@ export async function getCustomer(req, res) {
   try {
     const { id } = req.params;
     const row = await customersService.getCustomerById(id);
-    if (!row) return res.status(404).json({ error: "Customer not found" });
-    res.json(row);
+    if (!row) return sendError(res, "Customer not found", 404);
+    sendOne(res, row);
   } catch (err) {
-    res.status(500).json({ error: err?.message ?? String(err) });
+    sendError(res, err?.message ?? String(err), 500);
   }
 }
-

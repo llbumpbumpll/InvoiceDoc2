@@ -1,35 +1,38 @@
-// Customer API wrapper (ชุดเรียก API สำหรับลูกค้า)
-// Example usage: listCustomers().then(setCustomers)
 import { http } from "./http.js";
 
-export function listCustomers(params = {}) {
+function unwrap(res) {
+  if (res && res.success === false && res.error) throw new Error(res.error.message);
+  return res;
+}
+
+export async function listCustomers(params = {}) {
   const query = new URLSearchParams(params).toString();
-  return http(`/api/customers${query ? `?${query}` : ''}`);
+  const res = unwrap(await http(`/api/customers${query ? `?${query}` : ""}`));
+  return { data: res.data, ...(res.meta || {}) };
 }
 
-export function getCustomer(id) {
-  return http(`/api/customers/${id}`);
+export async function getCustomer(id) {
+  const res = unwrap(await http(`/api/customers/${id}`));
+  return res.data;
 }
 
-export function listCountries() {
-  return http("/api/customers/countries");
+export async function listCountries() {
+  const res = unwrap(await http("/api/customers/countries"));
+  return res.data ?? [];
 }
 
-export function createCustomer(data) {
-  return http("/api/customers", {
-    method: "POST",
-    body: JSON.stringify(data)
-  });
+export async function createCustomer(data) {
+  const res = unwrap(await http("/api/customers", { method: "POST", body: JSON.stringify(data) }));
+  return res.data;
 }
 
-export function updateCustomer(id, data) {
-  return http(`/api/customers/${id}`, {
-    method: "PUT",
-    body: JSON.stringify(data)
-  });
+export async function updateCustomer(id, data) {
+  const res = unwrap(await http(`/api/customers/${id}`, { method: "PUT", body: JSON.stringify(data) }));
+  return res.data;
 }
 
-export function deleteCustomer(id, force = false) {
+export async function deleteCustomer(id, force = false) {
   const url = `/api/customers/${id}` + (force ? "?force=true" : "");
-  return http(url, { method: "DELETE" });
+  const res = unwrap(await http(url, { method: "DELETE" }));
+  return res.data;
 }

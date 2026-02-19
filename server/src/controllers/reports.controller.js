@@ -1,37 +1,38 @@
 import * as reportsService from "../services/reports.service.js";
+import { sendList, sendData, sendError } from "../utils/response.js";
 
 export async function getInvoicesMonthlySummary(req, res) {
   try {
-    const rows = await reportsService.getInvoicesMonthlySummary();
-    res.json(rows);
+    const result = await reportsService.getInvoicesMonthlySummary();
+    sendData(res, result.data);
   } catch (err) {
-    res.status(500).json({ error: err?.message ?? String(err) });
+    sendError(res, err?.message ?? String(err), 500);
   }
 }
 
 export async function getSalesByProductSummary(req, res) {
   try {
     const result = await reportsService.getSalesByProductSummary(req.query);
-    res.json(result);
+    sendList(res, result);
   } catch (err) {
-    res.status(500).json({ error: err?.message ?? String(err) });
+    sendError(res, err?.message ?? String(err), 500);
   }
 }
 
 export async function getSalesByCustomerSummary(req, res) {
   try {
     const result = await reportsService.getSalesByCustomerSummary(req.query);
-    res.json(result);
+    sendList(res, result);
   } catch (err) {
-    res.status(500).json({ error: err?.message ?? String(err) });
+    sendError(res, err?.message ?? String(err), 500);
   }
 }
 
 export async function getSalesByProductMonthlySummary(req, res) {
   try {
     const result = await reportsService.getSalesByProductMonthlySummary(req.query);
-    res.json(result);
+    sendList(res, result);
   } catch (err) {
-    res.status(500).json({ error: err?.message ?? String(err) });
+    sendError(res, err?.message ?? String(err), 500);
   }
 }

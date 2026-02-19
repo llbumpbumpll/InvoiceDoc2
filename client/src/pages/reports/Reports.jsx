@@ -129,10 +129,16 @@ export default function Reports({ type = "product-sales" }) {
     const qs = params.toString();
     http(config.endpoint + (qs ? `?${qs}` : ""))
       .then(res => {
+        if (res && res.success === false && res.error) {
+          setErr(res.error.message || "Request failed");
+          setLoading(false);
+          return;
+        }
+        const meta = res.meta || {};
         setData(res.data || []);
-        setTotal(res.total || 0);
-        setTotalPages(res.totalPages || 0);
-        setPage(res.page || 1);
+        setTotal(meta.total ?? 0);
+        setTotalPages(meta.totalPages ?? 0);
+        setPage(meta.page ?? 1);
         setLoading(false);
       })
       .catch(e => { setErr(String(e.message || e)); setLoading(false); });

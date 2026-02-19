@@ -26,12 +26,12 @@ export default function ProductPage({ mode: propMode }) {
     React.useEffect(() => {
         if (mode === "create") {
             listUnits()
-                .then(setUnits)
+                .then(r => setUnits(r?.data ?? r ?? []))
                 .catch(e => setErr(String(e.message || e)));
         } else {
             Promise.all([listUnits(), getProduct(id)])
-                .then(([units, product]) => {
-                    setUnits(units);
+                .then(([unitsRes, product]) => {
+                    setUnits(unitsRes?.data ?? unitsRes ?? []);
                     if (product) {
                         setForm({
                             code: product.code || "",
