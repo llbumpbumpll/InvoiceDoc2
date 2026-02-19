@@ -409,7 +409,9 @@ button {
 
   .sidebar,
   .btn,
-  .no-print {
+  .no-print,
+  .mobile-warning,
+  .top-banner {
     display: none !important;
   }
 
