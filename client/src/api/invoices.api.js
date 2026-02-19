@@ -1,30 +1,32 @@
-// Invoice API wrapper (ชุดเรียก API สำหรับใบแจ้งหนี้)
-// Example usage: createInvoice(payload).then(({ id }) => ...)
 import { http } from "./http.js";
 
-export function listInvoices(params = {}) {
+function unwrap(res) {
+  if (res && res.success === false && res.error) throw new Error(res.error.message);
+  return res;
+}
+
+export async function listInvoices(params = {}) {
   const query = new URLSearchParams(params).toString();
-  return http(`/api/invoices${query ? `?${query}` : ''}`);
+  const res = unwrap(await http(`/api/invoices${query ? `?${query}` : ""}`));
+  return { data: res.data, ...(res.meta || {}) };
 }
 
-export function getInvoice(id) {
-  return http(`/api/invoices/${id}`);
+export async function getInvoice(id) {
+  const res = unwrap(await http(`/api/invoices/${id}`));
+  return res.data;
 }
 
-export function createInvoice(payload) {
-  return http("/api/invoices", {
-    method: "POST",
-    body: JSON.stringify(payload),
-  });
+export async function createInvoice(payload) {
+  const res = unwrap(await http("/api/invoices", { method: "POST", body: JSON.stringify(payload) }));
+  return res.data;
 }
 
-export function deleteInvoice(id) {
-  return http(`/api/invoices/${id}`, { method: "DELETE" });
+export async function deleteInvoice(id) {
+  const res = unwrap(await http(`/api/invoices/${id}`, { method: "DELETE" }));
+  return res.data;
 }
 
-export function updateInvoice(id, payload) {
-  return http(`/api/invoices/${id}`, {
-    method: "PUT",
-    body: JSON.stringify(payload),
-  });
+export async function updateInvoice(id, payload) {
+  const res = unwrap(await http(`/api/invoices/${id}`, { method: "PUT", body: JSON.stringify(payload) }));
+  return res.data;
 }

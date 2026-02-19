@@ -1,35 +1,38 @@
-// Product API wrapper (ชุดเรียก API สำหรับสินค้า)
-// Example usage: listProducts().then(setProducts)
 import { http } from "./http.js";
 
-export function listProducts(params = {}) {
+function unwrap(res) {
+  if (res && res.success === false && res.error) throw new Error(res.error.message);
+  return res;
+}
+
+export async function listProducts(params = {}) {
   const query = new URLSearchParams(params).toString();
-  return http(`/api/products${query ? `?${query}` : ''}`);
+  const res = unwrap(await http(`/api/products${query ? `?${query}` : ""}`));
+  return { data: res.data, ...(res.meta || {}) };
 }
 
-export function getProduct(id) {
-  return http(`/api/products/${id}`);
+export async function getProduct(id) {
+  const res = unwrap(await http(`/api/products/${id}`));
+  return res.data;
 }
 
-export function listUnits() {
-  return http("/api/products/units");
+export async function listUnits() {
+  const res = unwrap(await http("/api/products/units"));
+  return res.data ?? [];
 }
 
-export function createProduct(data) {
-  return http("/api/products", {
-    method: "POST",
-    body: JSON.stringify(data)
-  });
+export async function createProduct(data) {
+  const res = unwrap(await http("/api/products", { method: "POST", body: JSON.stringify(data) }));
+  return res.data;
 }
 
-export function updateProduct(id, data) {
-  return http(`/api/products/${id}`, {
-    method: "PUT",
-    body: JSON.stringify(data)
-  });
+export async function updateProduct(id, data) {
+  const res = unwrap(await http(`/api/products/${id}`, { method: "PUT", body: JSON.stringify(data) }));
+  return res.data;
 }
 
-export function deleteProduct(id, force = false) {
+export async function deleteProduct(id, force = false) {
   const url = `/api/products/${id}` + (force ? "?force=true" : "");
-  return http(url, { method: "DELETE" });
+  const res = unwrap(await http(url, { method: "DELETE" }));
+  return res.data;
 }

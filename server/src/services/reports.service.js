@@ -8,7 +8,7 @@ export async function getInvoicesMonthlySummary() {
     order by i.invoice_date desc
     limit 20
   `);
-  return rows;
+  return { data: rows };
 }
 
 export async function getSalesByProductSummary({

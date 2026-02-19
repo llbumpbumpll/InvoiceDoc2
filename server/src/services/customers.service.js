@@ -111,7 +111,7 @@ export async function deleteCustomer(id, { force = false } = {}) {
 
 export async function listCountries() {
   const { rows } = await pool.query("SELECT id, code, name FROM country ORDER BY name");
-  return rows;
+  return { data: rows };
 }
 
 export async function getCustomerById(id) {

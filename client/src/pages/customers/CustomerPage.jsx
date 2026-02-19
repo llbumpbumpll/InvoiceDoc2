@@ -26,12 +26,12 @@ export default function CustomerPage({ mode: propMode }) {
     React.useEffect(() => {
         if (mode === "create") {
             listCountries()
-                .then(setCountries)
+                .then(r => setCountries(r?.data ?? r ?? []))
                 .catch(e => setErr(String(e.message || e)));
         } else {
             Promise.all([listCountries(), getCustomer(id)])
-                .then(([countries, customer]) => {
-                    setCountries(countries);
+                .then(([countriesRes, customer]) => {
+                    setCountries(countriesRes?.data ?? countriesRes ?? []);
                     if (customer) {
                         setForm({
                             code: customer.code || "",
