@@ -1,4 +1,4 @@
-// Product routes (เส้นทาง API สำหรับสินค้า)
+// Product API routes
 // Example usage: GET /api/products
 import { Router } from "express";
 import * as c from "../controllers/products.controller.js";

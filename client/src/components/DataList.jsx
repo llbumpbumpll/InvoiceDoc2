@@ -7,16 +7,9 @@ import { TableLoading } from "./Loading.jsx";
 const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
 
 /**
- * @param {Object} props
- * @param {string} props.title - Page title
- * @param {Function} props.fetchData - Async function(params) that returns { data, total, page, limit, totalPages }
- * @param {Array} props.columns - Column definitions: { key, label, render?, align?, sortable? }
- * @param {string} props.searchPlaceholder - Search input placeholder
- * @param {string} props.itemName - Name of items (e.g., "invoices")
- * @param {string} props.basePath - Base URL path (e.g., "/invoices")
- * @param {Function} props.onDelete - Delete handler (id) => void
- * @param {string} props.emptyMessage - Message when no data
- * @param {number} props.defaultPageSize - Default items per page (default: 10)
+ * Reusable list table: search, sort, pagination.
+ * - onDelete(id): called when user clicks Delete (parent shows confirm modal, then calls API and increments refreshTrigger).
+ * - refreshTrigger: when this value changes, the list refetches (e.g. after a successful delete).
  */
 export default function DataList({
     title,
@@ -27,7 +20,8 @@ export default function DataList({
     basePath = "",
     onDelete,
     emptyMessage,
-    defaultPageSize = 10
+    defaultPageSize = 10,
+    refreshTrigger = 0
 }) {
     const [data, setData] = React.useState([]);
     const [total, setTotal] = React.useState(0);
@@ -42,12 +36,7 @@ export default function DataList({
     const [currentPage, setCurrentPage] = React.useState(1);
     const [pageSize, setPageSize] = React.useState(defaultPageSize);
 
-    const dataRef = React.useRef(data);
-    React.useEffect(() => {
-        dataRef.current = data;
-    }, [data]);
-
-    // Debounce search input
+    // Debounce search: update 300ms after user stops typing to avoid firing API on every keystroke
     React.useEffect(() => {
         const timer = setTimeout(() => {
             setSearch(searchInput);
@@ -88,7 +77,7 @@ export default function DataList({
         } finally {
             setLoading(false);
         }
-    }, [fetchData, search, currentPage, pageSize, sortKey, sortDir]);
+    }, [fetchData, search, currentPage, pageSize, sortKey, sortDir, refreshTrigger]);
 
     React.useEffect(() => {
         loadData();
@@ -106,22 +95,9 @@ export default function DataList({
         setCurrentPage(1);
     };
 
-    // Handle delete with reload
-    const handleDelete = async (id) => {
-        const confirmed = await onDelete?.(id);
-        if (!confirmed) return;
-
-        const prevLen = Number(dataRef.current?.length || 0);
-        setData((prev) => (Array.isArray(prev) ? prev.filter((x) => x?.id !== id) : prev));
-
-        // If we just removed the last row on this page, go back one page
-        // to avoid showing an empty/out-of-range page.
-        if (prevLen <= 1 && currentPage > 1) {
-            setCurrentPage((p) => Math.max(1, p - 1));
-            return;
-        }
-
-        loadData();
+    // Notify parent that user clicked Delete; parent shows modal, calls API, then passes new refreshTrigger to refetch
+    const handleDelete = (id) => {
+        onDelete?.(id);
     };
 
     // Generate page numbers to show

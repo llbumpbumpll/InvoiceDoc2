@@ -23,6 +23,7 @@ export async function getInvoice(req, res) {
 }
 
 export async function createInvoice(req, res) {
+  // Zod validates body (customer_id, invoice_date, line_items...) before saving
   const parsed = CreateInvoiceSchema.safeParse(req.body);
   if (!parsed.success) return sendError(res, "Validation failed", 400, "VALIDATION_ERROR", parsed.error.flatten());
   try {

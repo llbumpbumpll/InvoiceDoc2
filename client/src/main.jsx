@@ -1,5 +1,4 @@
-// App entry: mounts React, sets up routes and main layout
-// Example usage: visit `/invoices` to see the invoice list
+// App entry: defines which URL path renders which page (routes)
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter, Routes, Route, NavLink, Navigate } from "react-router-dom";
@@ -12,7 +11,7 @@ import ProductPage from "./pages/products/ProductPage.jsx";
 import Reports from "./pages/reports/Reports.jsx";
 import "./index.css";
 
-// Submenu component with expand/collapse
+// Collapsible submenu (e.g. Reports → Product Sales, Monthly Sales)
 function SubMenu({ icon, label, children, basePath }) {
   const location = window.location.pathname;
   const isActive = location.startsWith(basePath);
@@ -43,6 +42,7 @@ function SubMenu({ icon, label, children, basePath }) {
 }
 
 function Sidebar() {
+  // NavLink injects isActive when the current URL matches this link
   const getLinkClass = ({ isActive }) => isActive ? "nav-item active" : "nav-item";
   const getSubLinkClass = ({ isActive }) => isActive ? "nav-subitem active" : "nav-subitem";
 
@@ -134,7 +134,7 @@ function Layout({ children }) {
   );
 }
 
-// App router definitions (define page URLs)
+// Route definitions: path → component (e.g. /invoices → InvoiceList)
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <BrowserRouter>

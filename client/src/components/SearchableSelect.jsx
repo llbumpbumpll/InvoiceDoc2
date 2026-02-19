@@ -1,6 +1,13 @@
+/**
+ * Searchable dropdown. Two modes:
+ * - Static: pass options (array of { value, label }).
+ * - Async: pass onSearch(query) returning a Promise of options (e.g. fetch from API).
+ * value = selected id; onChange(val, label) when user selects.
+ */
 import React, { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 
+// Debounce typed value by 300ms before using (avoids calling API on every keystroke)
 function useDebounce(value, delay) {
     const [debouncedValue, setDebouncedValue] = useState(value);
     useEffect(() => {
@@ -30,7 +37,7 @@ export default function SearchableSelect({
     const inputRef = useRef(null);
 
     const debouncedSearch = useDebounce(search, 300);
-    const isAsyncMode = typeof onSearch === 'function';
+    const isAsyncMode = typeof onSearch === "function"; // onSearch present = load from API; else use options prop
     const options = isAsyncMode ? asyncOptions : staticOptions;
     const selectedOption = staticOptions.find(opt => String(opt.value) === String(value));
     const displayLabel = selectedLabel || selectedOption?.label || "";

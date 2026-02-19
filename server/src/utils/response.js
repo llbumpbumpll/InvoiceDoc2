@@ -1,3 +1,10 @@
+/**
+ * Helpers to send a consistent response shape to the frontend.
+ * - sendList: list + pagination (data, total, page, limit, totalPages)
+ * - sendOne / sendData / sendCreated: single item
+ * - sendOk: simple result (e.g. after delete)
+ * - sendError: error message + code (NOT_FOUND, BAD_REQUEST, ...)
+ */
 function success(res, data, status = 200, extra = {}) {
   res.status(status).json({
     success: true,
