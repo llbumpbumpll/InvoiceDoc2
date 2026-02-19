@@ -1,3 +1,4 @@
+// Customer CRUD and list (search by code/name/address, pagination, sort). Parameterized queries only.
 import { pool } from "../db/pool.js";
 
 export async function listCustomers({

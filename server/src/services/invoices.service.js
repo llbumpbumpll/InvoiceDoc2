@@ -1,3 +1,4 @@
+// Invoice CRUD: list (search, pagination, sort), get with line items, create/update/delete. Transactions for create/update.
 import { pool } from "../db/pool.js";
 
 export async function listInvoices({

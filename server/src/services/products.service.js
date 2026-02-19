@@ -1,3 +1,4 @@
+// Product CRUD and list (search by code/name/unit, pagination, sort). Parameterized queries only.
 import { pool } from "../db/pool.js";
 
 export async function listProducts({

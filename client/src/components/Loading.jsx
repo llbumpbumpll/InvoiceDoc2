@@ -1,3 +1,4 @@
+// Loading spinner and message; TableLoading for inline table loading state.
 import React from "react";
 
 export default function Loading({ message = "Loading...", size = "medium" }) {

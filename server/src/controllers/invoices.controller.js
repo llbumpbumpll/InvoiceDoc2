@@ -1,3 +1,4 @@
+// Invoice API handlers: list, get, create, update, delete. Validation via Zod; errors returned as JSON.
 import * as invoicesService from "../services/invoices.service.js";
 import { CreateInvoiceSchema } from "../models/invoice.model.js";
 import { sendList, sendOne, sendCreated, sendOk, sendError } from "../utils/response.js";

@@ -1,3 +1,4 @@
+// Report API handlers: sales by product, monthly sales, customer buying. All use parameterized queries.
 import * as reportsService from "../services/reports.service.js";
 import { sendList, sendData, sendError } from "../utils/response.js";
 

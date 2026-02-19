@@ -1,3 +1,4 @@
+// Modal overlay and variants: ConfirmModal (confirm/cancel), AlertModal (ok only). Rendered via portal.
 import React from "react";
 import { createPortal } from "react-dom";
 
