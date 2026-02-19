@@ -60,8 +60,9 @@ export default function InvoiceForm({ searchCustomers, searchProducts, onSubmit,
       return;
     }
     
+    // When editing, always send existing invoice_no so UPDATE does not set it to "" (would violate unique)
     const payload = {
-      invoice_no: autoCode ? "" : invoiceNo.trim(), // Send empty if auto
+      invoice_no: initialData ? invoiceNo.trim() : (autoCode ? "" : invoiceNo.trim()),
       customer_id: Number(customerId),
       invoice_date: invoiceDate,
       vat_rate: Number(vatRate),

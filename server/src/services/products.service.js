@@ -69,8 +69,14 @@ export async function createProduct({ code, name, units_id, unit_price } = {}) {
 }
 
 export async function updateProduct(id, { code, name, units_id, unit_price } = {}) {
+  // If code is empty (e.g. frontend "auto" on edit), keep existing to avoid unique constraint
+  let resolvedCode = (code != null && String(code).trim() !== "") ? String(code).trim() : null;
+  if (resolvedCode === null) {
+    const cur = await pool.query("SELECT code FROM product WHERE id=$1", [id]);
+    resolvedCode = cur.rowCount > 0 ? cur.rows[0].code : `P${id}`;
+  }
   await pool.query("UPDATE product SET code=$1, name=$2, units_id=$3, unit_price=$4 WHERE id=$5", [
-    code,
+    resolvedCode,
     name,
     units_id,
     unit_price,

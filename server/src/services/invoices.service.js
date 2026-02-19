@@ -114,6 +114,15 @@ export async function createInvoice({ invoice_no, customer_id, invoice_date, vat
     const vat = total * vat_rate;
     const amount_due = total + vat;
 
+    // Enforce customer credit limit: amount_due must not exceed credit_limit (if set)
+    const cust = await client.query("SELECT credit_limit FROM customer WHERE id=$1", [customer_id]);
+    if (cust.rowCount > 0 && cust.rows[0].credit_limit != null) {
+      const limit = Number(cust.rows[0].credit_limit);
+      if (amount_due > limit) {
+        throw new Error(`Amount due (${amount_due}) exceeds customer credit limit (${limit}).`);
+      }
+    }
+
     const inv = await client.query(
       `
         insert into invoice (id, created_at, invoice_no, invoice_date, customer_id, total_amount, vat, amount_due)
@@ -172,13 +181,30 @@ export async function updateInvoice(
     const vat = total * vat_rate;
     const amount_due = total + vat;
 
+    // Enforce customer credit limit: amount_due must not exceed credit_limit (if set)
+    const cust = await client.query("SELECT credit_limit FROM customer WHERE id=$1", [customer_id]);
+    if (cust.rowCount > 0 && cust.rows[0].credit_limit != null) {
+      const limit = Number(cust.rows[0].credit_limit);
+      if (amount_due > limit) {
+        throw new Error(`Amount due (${amount_due}) exceeds customer credit limit (${limit}).`);
+      }
+    }
+
+    // If invoice_no is empty (e.g. frontend sent "" for "auto"), keep existing value to avoid unique constraint
+    let resolvedInvoiceNo = (invoice_no != null && String(invoice_no).trim() !== "") ? String(invoice_no).trim() : null;
+    if (resolvedInvoiceNo === null) {
+      const cur = await client.query("SELECT invoice_no FROM invoice WHERE id=$1", [id]);
+      if (cur.rowCount > 0) resolvedInvoiceNo = cur.rows[0].invoice_no;
+      else resolvedInvoiceNo = `INV-${id}`;
+    }
+
     await client.query(
       `
         UPDATE invoice 
         SET invoice_no=$1, invoice_date=$2, customer_id=$3, total_amount=$4, vat=$5, amount_due=$6
         WHERE id=$7
       `,
-      [invoice_no, invoice_date, customer_id, total, vat, amount_due, id],
+      [resolvedInvoiceNo, invoice_date, customer_id, total, vat, amount_due, id],
     );
 
     await client.query("DELETE FROM invoice_line_item WHERE invoice_id=$1", [id]);
