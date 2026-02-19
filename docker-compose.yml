@@ -1,5 +1,4 @@
 services:
-  # PostgreSQL Database
   database:
     image: postgres:17-alpine3.22
     platform: linux/amd64
@@ -23,7 +22,6 @@ services:
       timeout: 5s
       retries: 5
 
-  # Backend API Server
   server:
     build:
       context: ./server
@@ -41,13 +39,7 @@ services:
         condition: service_healthy
     networks:
       - invoicedoc-network
-    healthcheck:
-      test: ["CMD", "node", "-e", "require('http').get('http://localhost:4000/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
 
-  # Frontend Client
   client:
     build:
       context: ./client
@@ -64,23 +56,8 @@ services:
     networks:
       - invoicedoc-network
 
-  # Adminer (Database Admin UI - optional)
-  adminer:
-    image: adminer
-    platform: linux/amd64
-    container_name: invoicedoc-adminer
-    restart: always
-    ports:
-      - "8080:8080"
-    depends_on:
-      - database
-    networks:
-      - invoicedoc-network
-
 volumes:
   pgdata:
-    driver: local
 
 networks:
-  invoicedoc-network:
-    driver: bridge
+  invoicedoc-network: {}

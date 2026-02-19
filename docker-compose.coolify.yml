@@ -1,0 +1,26 @@
+services:
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    restart: always
+    environment:
+      PORT: 4000
+      DATABASE_URL: ${DATABASE_URL}
+    networks:
+      - app
+
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE: ${VITE_API_BASE:-}
+    restart: always
+    depends_on:
+      - server
+    networks:
+      - app
+
+networks:
+  app: {}
