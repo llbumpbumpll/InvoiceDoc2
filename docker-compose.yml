@@ -6,11 +6,11 @@ services:
     restart: always
     shm_size: 128mb
     ports:
-      - "15432:5432"
+      - "${PORT_DB:-15432}:5432"
     environment:
-      POSTGRES_USER: root
-      POSTGRES_PASSWORD: root
-      POSTGRES_DB: invoices_db
+      POSTGRES_USER: ${POSTGRES_USER:-root}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-root}
+      POSTGRES_DB: ${POSTGRES_DB:-invoices_db}
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./database/init:/docker-entrypoint-initdb.d
@@ -30,10 +30,11 @@ services:
     container_name: invoicedoc-server
     restart: always
     ports:
-      - "4000:4000"
+      - "${PORT_SERVER:-4000}:4000"
     environment:
       PORT: 4000
-      DATABASE_URL: postgresql://root:root@database:5432/invoices_db
+      HOST: ${HOST_SERVER:-0.0.0.0}
+      DATABASE_URL: ${DATABASE_URL:-postgresql://root:root@database:5432/invoices_db}
     depends_on:
       database:
         condition: service_healthy
@@ -45,12 +46,12 @@ services:
       context: ./client
       dockerfile: Dockerfile
       args:
-        VITE_API_BASE: http://localhost:4000
+        VITE_API_BASE: ${VITE_API_BASE:-http://localhost:4000}
     platform: linux/amd64
     container_name: invoicedoc-client
     restart: always
     ports:
-      - "3000:3000"
+      - "${PORT_CLIENT:-3000}:3000"
     depends_on:
       - server
     networks:
