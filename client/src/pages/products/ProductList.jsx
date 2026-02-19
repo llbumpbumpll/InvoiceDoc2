@@ -1,5 +1,6 @@
 // Product list: click Delete → show confirm modal → call delete API → refresh table via refreshTrigger
 import React from "react";
+import { toast } from "react-toastify";
 import { listProducts, deleteProduct } from "../../api/products.api.js";
 import { formatBaht } from "../../utils.js";
 import DataList from "../../components/DataList.jsx";
@@ -22,11 +23,13 @@ export default function ProductList() {
             await deleteProduct(confirmModal.id, confirmModal.force);
             closeConfirm();
             setRefreshTrigger((t) => t + 1);
+            toast.success(confirmModal.force ? "Product and related invoices deleted." : "Product deleted.");
         } catch (e) {
             const msg = String(e.message || e);
             if (msg.includes("Cannot delete product because it is used in invoices")) {
                 setConfirmModal({ isOpen: true, id: confirmModal.id, force: true });
             } else {
+                toast.error(msg);
                 setAlertModal({ isOpen: true, message: "Error: " + msg });
                 closeConfirm();
             }

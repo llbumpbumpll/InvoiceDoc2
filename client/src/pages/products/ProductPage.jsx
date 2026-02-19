@@ -4,6 +4,7 @@
 // - /products/:id/edit → mode="edit"
 import React from "react";
 import { useNavigate, Link, useParams } from "react-router-dom";
+import { toast } from "react-toastify";
 import { listUnits, getProduct, createProduct, updateProduct } from "../../api/products.api.js";
 import { formatBaht } from "../../utils.js";
 import Loading from "../../components/Loading.jsx";
@@ -61,19 +62,22 @@ export default function ProductPage({ mode: propMode }) {
             
             if (mode === "create") {
                 await createProduct(payload);
+                toast.success("Product created.");
             } else {
                 await updateProduct(id, payload);
+                toast.success("Product updated.");
             }
             nav("/products");
         } catch (e) {
-            setErr(String(e.message || e));
+            const msg = String(e.message || e);
+            setErr(msg);
+            toast.error(msg);
         } finally {
             setSubmitting(false);
         }
     };
 
     if (loading) return <Loading size="large" />;
-    if (err) return <div className="alert alert-error">{err}</div>;
 
     const isView = mode === "view";
     const isCreate = mode === "create";

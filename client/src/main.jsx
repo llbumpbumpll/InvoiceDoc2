@@ -2,6 +2,8 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter, Routes, Route, NavLink, Navigate } from "react-router-dom";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import InvoiceList from "./pages/invoices/InvoiceList.jsx";
 import InvoicePage from "./pages/invoices/InvoicePage.jsx";
 import CustomerList from "./pages/customers/CustomerList.jsx";
@@ -119,6 +121,7 @@ function MobileWarning() {
 function Layout({ children }) {
   return (
     <div className="layout-container">
+      <ToastContainer position="bottom-right" autoClose={4000} hideProgressBar={false} theme="light" />
       <MobileWarning />
       <div className="top-banner no-print">
         This is a sample term project for CPE241 Database Systems. Some functions may be incomplete. Click

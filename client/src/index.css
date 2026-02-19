@@ -411,7 +411,8 @@ button {
   .btn,
   .no-print,
   .mobile-warning,
-  .top-banner {
+  .top-banner,
+  .Toastify {
     display: none !important;
   }
 

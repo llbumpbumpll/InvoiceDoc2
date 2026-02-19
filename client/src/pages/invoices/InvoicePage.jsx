@@ -7,6 +7,7 @@ import { useNavigate, Link, useParams } from "react-router-dom";
 import { listCustomers } from "../../api/customers.api.js";
 import { listProducts } from "../../api/products.api.js";
 import { getInvoice, createInvoice, updateInvoice } from "../../api/invoices.api.js";
+import { toast } from "react-toastify";
 import { formatBaht, formatDate } from "../../utils.js";
 import InvoiceForm from "../../components/InvoiceForm.jsx";
 import Loading from "../../components/Loading.jsx";
@@ -108,13 +109,17 @@ export default function InvoicePage({ mode: propMode }) {
         try {
             if (mode === "create") {
                 const res = await createInvoice(payload);
+                toast.success("Invoice created.");
                 nav(`/invoices/${res.id}`);
             } else {
                 await updateInvoice(id, payload);
+                toast.success("Invoice updated.");
                 nav(`/invoices/${id}`);
             }
         } catch (e) {
-            setErr(String(e.message || e));
+            const msg = String(e.message || e);
+            setErr(msg);
+            toast.error(msg);
         } finally {
             setSubmitting(false);
         }
@@ -123,7 +128,6 @@ export default function InvoicePage({ mode: propMode }) {
     const handlePrint = () => window.print();
 
     if (loading) return <Loading size="large" />;
-    if (err) return <div className="alert alert-error">{err}</div>;
 
     const isView = mode === "view";
     const isCreate = mode === "create";

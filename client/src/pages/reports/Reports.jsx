@@ -1,4 +1,5 @@
 import React from "react";
+import { toast } from "react-toastify";
 import { getReportData } from "../../api/reports.api.js";
 import { formatBaht, formatDate } from "../../utils.js";
 import ReportFilters from "./filters/ReportFilters.jsx";
@@ -126,7 +127,11 @@ export default function Reports({ type = "product-sales" }) {
         setTotalPages(res.totalPages ?? 0);
         setPage(res.page ?? 1);
       })
-      .catch((e) => setErr(String(e.message || e)))
+      .catch((e) => {
+        const msg = String(e.message || e);
+        setErr(msg);
+        toast.error(msg);
+      })
       .finally(() => setLoading(false));
   }, [type, appliedFilters, page, limit, sortKey, sortDir]);
 

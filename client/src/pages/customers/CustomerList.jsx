@@ -1,5 +1,6 @@
 // Customer list: click Delete → show confirm modal → call delete API → refresh table via refreshTrigger
 import React from "react";
+import { toast } from "react-toastify";
 import { listCustomers, deleteCustomer } from "../../api/customers.api.js";
 import { formatBaht } from "../../utils.js";
 import DataList from "../../components/DataList.jsx";
@@ -24,11 +25,13 @@ export default function CustomerList() {
             await deleteCustomer(confirmModal.id, confirmModal.force);
             closeConfirm();
             setRefreshTrigger((t) => t + 1);
+            toast.success(confirmModal.force ? "Customer and related invoices deleted." : "Customer deleted.");
         } catch (e) {
             const msg = String(e.message || e);
             if (msg.includes("Cannot delete customer because they have existing invoices")) {
                 setConfirmModal({ isOpen: true, id: confirmModal.id, force: true });
             } else {
+                toast.error(msg);
                 setAlertModal({ isOpen: true, message: "Error: " + msg });
                 closeConfirm();
             }

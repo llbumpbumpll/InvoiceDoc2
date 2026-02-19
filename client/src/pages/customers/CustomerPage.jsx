@@ -4,6 +4,7 @@
 // - /customers/:id/edit → mode="edit"
 import React from "react";
 import { useNavigate, Link, useParams } from "react-router-dom";
+import { toast } from "react-toastify";
 import { listCountries, getCustomer, createCustomer, updateCustomer } from "../../api/customers.api.js";
 import { formatBaht } from "../../utils.js";
 import Loading from "../../components/Loading.jsx";
@@ -63,19 +64,22 @@ export default function CustomerPage({ mode: propMode }) {
             
             if (mode === "create") {
                 await createCustomer(payload);
+                toast.success("Customer created.");
             } else {
                 await updateCustomer(id, payload);
+                toast.success("Customer updated.");
             }
             nav("/customers");
         } catch (e) {
-            setErr(String(e.message || e));
+            const msg = String(e.message || e);
+            setErr(msg);
+            toast.error(msg);
         } finally {
             setSubmitting(false);
         }
     };
 
     if (loading) return <Loading size="large" />;
-    if (err) return <div className="alert alert-error">{err}</div>;
 
     const isView = mode === "view";
     const isCreate = mode === "create";

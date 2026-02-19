@@ -1,5 +1,6 @@
 // Invoice list: click Delete → show confirm modal → call delete API → refresh table via refreshTrigger
 import React from "react";
+import { toast } from "react-toastify";
 import { listInvoices, deleteInvoice } from "../../api/invoices.api.js";
 import { formatBaht, formatDate } from "../../utils.js";
 import DataList from "../../components/DataList.jsx";
@@ -22,8 +23,11 @@ export default function InvoiceList() {
             await deleteInvoice(confirmModal.id);
             closeConfirm();
             setRefreshTrigger((t) => t + 1);
+            toast.success("Invoice deleted.");
         } catch (e) {
-            setAlertModal({ isOpen: true, message: "Error: " + String(e.message || e) });
+            const msg = String(e.message || e);
+            toast.error(msg);
+            setAlertModal({ isOpen: true, message: "Error: " + msg });
             closeConfirm();
         }
     };
