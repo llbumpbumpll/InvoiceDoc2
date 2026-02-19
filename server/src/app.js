@@ -22,4 +22,5 @@ app.use("/api/invoices", invoicesRoutes);
 app.use("/api/reports", reportsRoutes);
 
 const port = process.env.PORT || 4000;
-app.listen(port, () => console.log(`Invoice server listening on :${port}`));
+const host = process.env.HOST || "0.0.0.0";
+app.listen(port, host, () => console.log(`Invoice server listening on ${host}:${port}`));
