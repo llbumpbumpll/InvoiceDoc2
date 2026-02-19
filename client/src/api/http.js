@@ -1,5 +1,10 @@
+// Backend API base URL (override via .env VITE_API_BASE)
 export const API_BASE = import.meta.env.VITE_API_BASE !== undefined ? import.meta.env.VITE_API_BASE : "http://localhost:4000";
 
+/**
+ * Calls the backend API. Response shape: { success, data, meta? } or { success: false, error: { message } }.
+ * Throws Error if success is false or status is not 2xx.
+ */
 export async function http(path, options = {}) {
   const baseUrl = API_BASE.endsWith("/") ? API_BASE.slice(0, -1) : API_BASE;
   const res = await fetch(`${baseUrl}${path}`, {

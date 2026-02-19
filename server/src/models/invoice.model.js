@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-// Validation schema for creating/updating invoices
+// Validation rules: allowed shape (customer_id number, line_items at least one, etc.)
 export const CreateInvoiceSchema = z.object({
   invoice_no: z.string().optional(), // Optional for auto-generation
   customer_id: z.number().int(),

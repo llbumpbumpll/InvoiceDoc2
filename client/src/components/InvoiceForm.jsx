@@ -1,4 +1,4 @@
-// Invoice form component (ฟอร์มสร้าง/แก้ไขใบแจ้งหนี้)
+// Invoice form (create/edit) with customer select and line items
 // Example usage: <InvoiceForm searchCustomers={...} searchProducts={...} onSubmit={...} />
 import React from "react";
 import LineItemsEditor from "./LineItemsEditor.jsx";

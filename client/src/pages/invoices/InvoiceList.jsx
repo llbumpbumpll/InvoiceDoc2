@@ -1,4 +1,4 @@
-// Invoice list page
+// Invoice list: click Delete → show confirm modal → call delete API → refresh table via refreshTrigger
 import React from "react";
 import { listInvoices, deleteInvoice } from "../../api/invoices.api.js";
 import { formatBaht, formatDate } from "../../utils.js";
@@ -9,32 +9,19 @@ export default function InvoiceList() {
     const fetchData = React.useCallback((params) => listInvoices(params), []);
     const [confirmModal, setConfirmModal] = React.useState({ isOpen: false, id: null });
     const [alertModal, setAlertModal] = React.useState({ isOpen: false, message: "" });
-    const pendingDeleteRef = React.useRef(null);
+    const [refreshTrigger, setRefreshTrigger] = React.useState(0);
 
-    const closeConfirm = React.useCallback(() => {
-        setConfirmModal({ isOpen: false, id: null });
-        if (pendingDeleteRef.current) {
-            pendingDeleteRef.current(false);
-            pendingDeleteRef.current = null;
-        }
-    }, []);
+    const closeConfirm = () => setConfirmModal({ isOpen: false, id: null });
 
     const handleDelete = (id) => {
-        // Return a promise so DataList can wait until user confirms/cancels.
-        return new Promise((resolve) => {
-            pendingDeleteRef.current = resolve;
-            setConfirmModal({ isOpen: true, id });
-        });
+        setConfirmModal({ isOpen: true, id });
     };
 
     const confirmDelete = async () => {
         try {
             await deleteInvoice(confirmModal.id);
-            setConfirmModal({ isOpen: false, id: null });
-            if (pendingDeleteRef.current) {
-                pendingDeleteRef.current(true);
-                pendingDeleteRef.current = null;
-            }
+            closeConfirm();
+            setRefreshTrigger((t) => t + 1);
         } catch (e) {
             setAlertModal({ isOpen: true, message: "Error: " + String(e.message || e) });
             closeConfirm();
@@ -66,6 +53,7 @@ export default function InvoiceList() {
                 message={alertModal.message}
             />
             <DataList
+                refreshTrigger={refreshTrigger}
                 title="Invoices"
                 fetchData={fetchData}
                 columns={columns}

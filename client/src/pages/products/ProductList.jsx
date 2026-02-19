@@ -1,4 +1,4 @@
-// Product list page
+// Product list: click Delete → show confirm modal → call delete API → refresh table via refreshTrigger
 import React from "react";
 import { listProducts, deleteProduct } from "../../api/products.api.js";
 import { formatBaht } from "../../utils.js";
@@ -9,32 +9,19 @@ export default function ProductList() {
     const fetchData = React.useCallback((params) => listProducts(params), []);
     const [confirmModal, setConfirmModal] = React.useState({ isOpen: false, id: null, force: false });
     const [alertModal, setAlertModal] = React.useState({ isOpen: false, message: "" });
-    const pendingDeleteRef = React.useRef(null);
+    const [refreshTrigger, setRefreshTrigger] = React.useState(0);
 
-    const closeConfirm = React.useCallback(() => {
-        setConfirmModal({ isOpen: false, id: null, force: false });
-        if (pendingDeleteRef.current) {
-            pendingDeleteRef.current(false);
-            pendingDeleteRef.current = null;
-        }
-    }, []);
+    const closeConfirm = () => setConfirmModal({ isOpen: false, id: null, force: false });
 
     const handleDelete = (id) => {
-        // Return a promise so DataList can wait until user confirms/cancels.
-        return new Promise((resolve) => {
-            pendingDeleteRef.current = resolve;
-            setConfirmModal({ isOpen: true, id, force: false });
-        });
+        setConfirmModal({ isOpen: true, id, force: false });
     };
 
     const confirmDelete = async () => {
         try {
             await deleteProduct(confirmModal.id, confirmModal.force);
-            setConfirmModal({ isOpen: false, id: null, force: false });
-            if (pendingDeleteRef.current) {
-                pendingDeleteRef.current(true);
-                pendingDeleteRef.current = null;
-            }
+            closeConfirm();
+            setRefreshTrigger((t) => t + 1);
         } catch (e) {
             const msg = String(e.message || e);
             if (msg.includes("Cannot delete product because it is used in invoices")) {
@@ -80,6 +67,7 @@ export default function ProductList() {
                 itemName="products"
                 basePath="/products"
                 onDelete={handleDelete}
+                refreshTrigger={refreshTrigger}
             />
         </>
     );

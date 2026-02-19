@@ -1,4 +1,4 @@
-// Reports routes (เส้นทาง API สำหรับรายงาน)
+// Reports API routes
 // Example usage: GET /api/reports/product-sales
 import { Router } from "express";
 import * as c from "../controllers/reports.controller.js";

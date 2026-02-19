@@ -1,4 +1,4 @@
-// Customer routes (เส้นทาง API สำหรับลูกค้า)
+// Customer API routes
 // Example usage: GET /api/customers
 import { Router } from "express";
 import * as c from "../controllers/customers.controller.js";

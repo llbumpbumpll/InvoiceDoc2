@@ -5,6 +5,7 @@ import ReportFilters from "./filters/ReportFilters.jsx";
 import PaginationFilter from "./filters/PaginationFilter.jsx";
 import ReportTable from "../../components/ReportTable.jsx";
 
+// Config per report type: title, API endpoint, table columns (getColumns receives filters e.g. to show date range)
 const REPORT_CONFIG = {
   "product-sales": {
     title: "Total Sales Performance",
@@ -91,18 +92,16 @@ export default function Reports({ type = "product-sales" }) {
   const [data, setData] = React.useState([]);
   const [loading, setLoading] = React.useState(false);
   const [err, setErr] = React.useState("");
-  const [filters, setFilters] = React.useState({});
-  const [appliedFilters, setAppliedFilters] = React.useState({});
-  const [hasApplied, setHasApplied] = React.useState(false);
+  const [filters, setFilters] = React.useState({});           // values user selects in the form
+  const [appliedFilters, setAppliedFilters] = React.useState({}); // values after Apply → sent to API
+  const [hasApplied, setHasApplied] = React.useState(false);  // no data until user clicks Apply
   const [showFilters, setShowFilters] = React.useState(true);
-  
-  // Pagination state
+
   const [page, setPage] = React.useState(1);
   const [limit, setLimit] = React.useState(10);
   const [total, setTotal] = React.useState(0);
   const [totalPages, setTotalPages] = React.useState(0);
-  
-  // Sorting state
+
   const [sortKey, setSortKey] = React.useState(null);
   const [sortDir, setSortDir] = React.useState("asc");
 

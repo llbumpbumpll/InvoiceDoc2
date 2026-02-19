@@ -1,4 +1,4 @@
-// Line items table editor (ตารางรายการสินค้าในใบแจ้งหนี้)
+// Line items table editor for invoice (add/remove/reorder rows)
 // Example usage: <LineItemsEditor searchProducts={async (q) => [...]} value={items} onChange={setItems} />
 import React, { useState } from "react";
 import { formatBaht } from "../utils.js";

@@ -1,5 +1,4 @@
-// Express API server entry (เริ่มต้นเซิร์ฟเวอร์ API)
-// Example usage: `node src/app.js` แล้วเรียก /health
+// Backend entry: receives HTTP requests and forwards to routes (customers, products, invoices, reports)
 import express from "express";
 import cors from "cors";
 
