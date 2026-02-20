@@ -35,6 +35,7 @@ services:
       PORT: 4000
       HOST: ${HOST_SERVER:-0.0.0.0}
       DATABASE_URL: ${DATABASE_URL:-postgresql://root:root@database:5432/invoices_db}
+      CORS_ORIGIN: ${CORS_ORIGIN:-}
     depends_on:
       database:
         condition: service_healthy
