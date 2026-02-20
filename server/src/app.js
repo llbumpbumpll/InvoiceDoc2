@@ -8,7 +8,16 @@ import customersRoutes from "./routes/customers.routes.js";
 import productsRoutes from "./routes/products.routes.js";
 
 const app = express();
-app.use(cors());
+
+// CORS: allow origin from CORS_ORIGIN env, or * if unset (e.g. dev). Allows common methods/headers.
+const corsOrigin = process.env.CORS_ORIGIN;
+app.use(
+  cors({
+    origin: corsOrigin === undefined || corsOrigin === "" ? true : corsOrigin.split(",").map((o) => o.trim()),
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
 app.use(express.json());
 
 // Health check
