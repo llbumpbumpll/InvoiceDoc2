@@ -1,7 +1,9 @@
 // Line items table: add/remove/reorder rows, insert row between. Drag-and-drop and up/down buttons.
-// Example usage: <LineItemsEditor value={items} onChange={setItems} />
+// Each row: product code (editable + LoV), product name & unit price (readonly); load by code on blur.
 import React, { useState } from "react";
+import { toast } from "react-toastify";
 import { formatBaht } from "../utils.js";
+import { getProduct } from "../api/products.api.js";
 import ProductPickerModal from "./ProductPickerModal.jsx";
 
 export default function LineItemsEditor({ value, onChange }) {
@@ -10,6 +12,7 @@ export default function LineItemsEditor({ value, onChange }) {
     const [dragOverIndex, setDragOverIndex] = useState(null);
     const [productPickerOpen, setProductPickerOpen] = useState(false);
     const [pickerRowIndex, setPickerRowIndex] = useState(0);
+    const [productErrorRow, setProductErrorRow] = useState(null); // row index that has "product not found"
 
     // Update one row by index
     function update(i, patch) {
@@ -21,13 +24,13 @@ export default function LineItemsEditor({ value, onChange }) {
     function addRow() {
         onChange([
             ...items,
-            { product_code: "", quantity: 1, unit_price: 0 },
+            { product_code: "", product_name: "", quantity: 1, unit_price: 0 },
         ]);
     }
 
     // Insert a new empty row after index i (add row in between)
     function insertRowAfter(i) {
-        const newRow = { product_code: "", quantity: 1, unit_price: 0 };
+        const newRow = { product_code: "", product_name: "", quantity: 1, unit_price: 0 };
         const next = [...items.slice(0, i + 1), newRow, ...items.slice(i + 1)];
         onChange(next);
     }
@@ -93,8 +96,9 @@ export default function LineItemsEditor({ value, onChange }) {
     }
 
     function onPickProduct(i, productCode, productData) {
+        setProductErrorRow(null);
         if (!productData) {
-            update(i, { product_code: "", product_label: "", units_code: "", unit_price: 0 });
+            update(i, { product_code: "", product_name: "", product_label: "", units_code: "", unit_price: 0 });
             return;
         }
 
@@ -109,13 +113,35 @@ export default function LineItemsEditor({ value, onChange }) {
             };
             onChange(newItems);
         } else {
-            update(i, { 
-                product_code: productData.code, 
+            update(i, {
+                product_code: productData.code,
+                product_name: productData.name ?? "",
                 product_label: productData.label,
                 units_code: productData.units_code,
-                unit_price: Number(productData.unit_price || 0) 
+                unit_price: Number(productData.unit_price || 0)
             });
         }
+    }
+
+    function handleProductCodeBlur(i) {
+        const code = String(items[i]?.product_code ?? "").trim();
+        setProductErrorRow(null);
+        if (!code) return;
+        getProduct(code)
+            .then((p) => {
+                update(i, {
+                    product_code: p.code,
+                    product_name: p.name ?? "",
+                    product_label: `${p.code} - ${p.name}`,
+                    units_code: p.units_code ?? "",
+                    unit_price: Number(p.unit_price ?? 0)
+                });
+            })
+            .catch(() => {
+                update(i, { product_name: "", product_label: "", units_code: "", unit_price: 0 });
+                setProductErrorRow(i);
+                toast.error(`Product not found: ${code}`);
+            });
     }
 
     // Compute extended price (qty * unit price)
@@ -205,11 +231,12 @@ export default function LineItemsEditor({ value, onChange }) {
                     <thead>
                         <tr>
                             <th style={{ width: '60px' }} className="text-center">#</th>
-                            <th style={{ width: '35%' }}>Product</th>
-                            <th style={{ width: '10%' }} className="text-center">Unit</th>
-                            <th style={{ width: '12%' }} className="text-right">Qty</th>
-                            <th style={{ width: '14%' }} className="text-right">Unit Price</th>
-                            <th style={{ width: '14%' }} className="text-right">Extended</th>
+                            <th style={{ width: '18%' }}>Product Code <span className="required-marker">*</span></th>
+                            <th style={{ width: '22%' }}>Product Name</th>
+                            <th style={{ width: '8%' }} className="text-center">Unit</th>
+                            <th style={{ width: '10%' }} className="text-right">Qty <span className="required-marker">*</span></th>
+                            <th style={{ width: '12%' }} className="text-right">Unit Price <span className="required-marker">*</span></th>
+                            <th style={{ width: '12%' }} className="text-right">Extended</th>
                             <th style={{ width: '100px' }} className="text-center">Actions</th>
                         </tr>
                     </thead>
@@ -256,62 +283,61 @@ export default function LineItemsEditor({ value, onChange }) {
                                         </div>
                                     </td>
                                     <td>
-                                        <div
-                                            style={{
-                                                display: "flex",
-                                                gap: 0,
-                                                alignItems: "stretch",
-                                                border: "1px solid var(--border)",
-                                                borderRadius: "var(--radius-sm)",
-                                                overflow: "hidden",
-                                                minHeight: 38,
-                                            }}
-                                        >
-                                            <button
-                                                type="button"
-                                                className="customer-select-trigger"
-                                                onClick={() => { setPickerRowIndex(i); setProductPickerOpen(true); }}
-                                                style={{
-                                                    flex: 1,
-                                                    textAlign: "left",
-                                                    padding: "8px 12px",
-                                                    border: "none",
-                                                    background: "var(--bg-surface)",
-                                                    color: it.product_label ? "var(--text-main)" : "var(--text-muted)",
-                                                    fontSize: "0.95rem",
-                                                    cursor: "pointer",
-                                                }}
-                                            >
-                                                {it.product_label || "Select product..."}
-                                            </button>
-                                            {it.product_code && (
+                                        <div>
+                                            <div style={{ display: "flex", gap: 6, alignItems: "stretch" }}>
+                                                <input
+                                                    type="text"
+                                                    className="form-control"
+                                                    value={it.product_code || ""}
+                                                    onChange={(e) => { update(i, { product_code: e.target.value }); if (productErrorRow === i) setProductErrorRow(null); }}
+                                                    onBlur={() => handleProductCodeBlur(i)}
+                                                    placeholder="e.g. P001"
+                                                    style={{ flex: 1, minWidth: 0, padding: "6px 10px", fontSize: "0.9rem", borderColor: productErrorRow === i ? "#ef4444" : undefined }}
+                                                />
                                                 <button
                                                     type="button"
-                                                    onClick={(e) => { e.stopPropagation(); onPickProduct(i, "", null); }}
-                                                    title="Clear"
-                                                    style={{
-                                                        padding: "0 10px",
-                                                        border: "none",
-                                                        borderLeft: "1px solid var(--border)",
-                                                        background: "var(--bg-body)",
-                                                        color: "var(--text-muted)",
-                                                        cursor: "pointer",
-                                                        fontSize: "1.2rem",
-                                                        lineHeight: 1,
-                                                    }}
+                                                    className="btn btn-primary"
+                                                    style={{ flexShrink: 0, padding: "6px 12px", fontSize: "0.8rem" }}
+                                                    onClick={() => { setPickerRowIndex(i); setProductPickerOpen(true); }}
+                                                    title="List of Values"
                                                 >
-                                                    ×
+                                                    LoV
                                                 </button>
+                                                {it.product_code && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={(e) => { e.stopPropagation(); onPickProduct(i, "", null); setProductErrorRow(null); }}
+                                                        title="Clear"
+                                                        style={{
+                                                            padding: "0 8px",
+                                                            border: "1px solid var(--border)",
+                                                            borderRadius: "var(--radius-sm)",
+                                                            background: "var(--bg-body)",
+                                                            color: "var(--text-muted)",
+                                                            cursor: "pointer",
+                                                            fontSize: "1.1rem",
+                                                            lineHeight: 1,
+                                                        }}
+                                                    >
+                                                        ×
+                                                    </button>
+                                                )}
+                                            </div>
+                                            {productErrorRow === i && (
+                                                <span style={{ fontSize: "0.75rem", color: "#ef4444", marginTop: 4, display: "block" }}>Product not found</span>
                                             )}
-                                            <button
-                                                type="button"
-                                                className="btn btn-primary"
-                                                style={{ borderRadius: 0, flexShrink: 0, padding: "8px 14px" }}
-                                                onClick={() => { setPickerRowIndex(i); setProductPickerOpen(true); }}
-                                            >
-                                                Select
-                                            </button>
                                         </div>
+                                    </td>
+                                    <td>
+                                        <input
+                                            type="text"
+                                            className="form-control"
+                                            disabled
+                                            readOnly
+                                            value={it.product_name ?? it.product_label?.replace(/^[^\-]+\s*-\s*/, "") ?? ""}
+                                            placeholder="—"
+                                            style={{ padding: "6px 10px", fontSize: "0.9rem", background: "var(--bg-body)" }}
+                                        />
                                     </td>
                                     <td className="text-center">
                                         <span style={{ 
@@ -429,7 +455,7 @@ export default function LineItemsEditor({ value, onChange }) {
                         })}
                         {items.length === 0 && (
                             <tr>
-                                <td colSpan="7" style={{ 
+                                <td colSpan="8" style={{ 
                                     padding: 40, 
                                     textAlign: 'center',
                                     color: 'var(--text-muted)'
@@ -484,9 +510,11 @@ export default function LineItemsEditor({ value, onChange }) {
             <ProductPickerModal
                 isOpen={productPickerOpen}
                 onClose={() => setProductPickerOpen(false)}
+                initialSearch={items[pickerRowIndex]?.product_code ?? ""}
                 onSelect={(row) => {
                     const productData = {
                         code: row.code,
+                        name: row.name,
                         label: `${row.code} - ${row.name}`,
                         units_code: row.units_code,
                         unit_price: Number(row.unit_price || 0),

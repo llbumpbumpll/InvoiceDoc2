@@ -20,6 +20,7 @@ export default function ListPickerModal({
   emptySearch = "No results found.",
   emptyDefault = "No items yet.",
   getSelectLabel = (row) => (row.code != null && row.name != null ? `${row.code} - ${row.name}` : String(row.code ?? row.invoice_no ?? "")),
+  initialSearch = "",
 }) {
   const [data, setData] = React.useState([]);
   const [total, setTotal] = React.useState(0);
@@ -28,6 +29,20 @@ export default function ListPickerModal({
   const [searchInput, setSearchInput] = React.useState("");
   const [search, setSearch] = React.useState("");
   const [page, setPage] = React.useState(1);
+
+  // When modal opens, pre-fill search with initialSearch (e.g. current customer code / product code)
+  React.useEffect(() => {
+    if (isOpen && initialSearch != null && String(initialSearch).trim() !== "") {
+      const v = String(initialSearch).trim();
+      setSearchInput(v);
+      setSearch(v);
+      setPage(1);
+    } else if (isOpen && (initialSearch == null || String(initialSearch).trim() === "")) {
+      setSearchInput("");
+      setSearch("");
+      setPage(1);
+    }
+  }, [isOpen, initialSearch]);
   const [sortBy, setSortBy] = React.useState(columns[0]?.key || "id");
   const [sortDir, setSortDir] = React.useState("asc");
   const [pageSize, setPageSize] = React.useState(10);
@@ -53,11 +68,15 @@ export default function ListPickerModal({
     setPage(1);
   };
 
+  const initialSearchTrimmed = initialSearch != null && String(initialSearch).trim() !== "" ? String(initialSearch).trim() : "";
+  const useInitialForFetch = isOpen && initialSearchTrimmed !== "" && (searchInput === "" || searchInput === initialSearchTrimmed);
+  const effectiveSearch = useInitialForFetch ? initialSearchTrimmed : search;
+
   React.useEffect(() => {
     if (!isOpen || !fetchData) return;
     let cancelled = false;
     setLoading(true);
-    fetchData({ search, page, limit, sortBy, sortDir })
+    fetchData({ search: effectiveSearch, page, limit, sortBy, sortDir })
       .then((res) => {
         if (cancelled) return;
         setData(res.data || []);
@@ -71,7 +90,7 @@ export default function ListPickerModal({
         if (!cancelled) setLoading(false);
       });
     return () => { cancelled = true; };
-  }, [isOpen, fetchData, search, page, limit, sortBy, sortDir]);
+  }, [isOpen, fetchData, effectiveSearch, page, limit, sortBy, sortDir]);
 
   const handleSelect = (row) => {
     onSelect(row);

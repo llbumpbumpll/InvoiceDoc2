@@ -53,7 +53,9 @@ export default function InvoicePage({ mode: propMode }) {
                         invoice_date: h.invoice_date,
                         vat_rate: rate,
                         line_items: inv.line_items.map(li => ({
+                            line_item_id: li.id,
                             product_code: li.product_code,
+                            product_name: li.product_name,
                             product_label: `${li.product_code} - ${li.product_name}`,
                             quantity: li.quantity,
                             unit_price: li.unit_price

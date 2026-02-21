@@ -10,7 +10,7 @@ const COLUMNS = [
   { key: "unit_price", label: "Unit Price", align: "right", render: (v) => (v != null ? formatBaht(v) : "-") },
 ];
 
-export default function ProductPickerModal({ isOpen, onClose, onSelect }) {
+export default function ProductPickerModal({ isOpen, onClose, onSelect, initialSearch = "" }) {
   const fetchData = React.useCallback((params) => listProducts(params), []);
 
   return (
@@ -18,6 +18,7 @@ export default function ProductPickerModal({ isOpen, onClose, onSelect }) {
       isOpen={isOpen}
       onClose={onClose}
       onSelect={onSelect}
+      initialSearch={initialSearch}
       title="Select Product"
       searchPlaceholder="Search code, name..."
       fetchData={fetchData}
