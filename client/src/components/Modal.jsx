@@ -95,8 +95,13 @@ export function ConfirmModal({
   );
 }
 
-// Alert Modal Helper
+// Alert Modal Helper. message can be string or React node (e.g. list of errors).
 export function AlertModal({ isOpen, onClose, title, message, buttonText = "OK" }) {
+  const content = typeof message === "string" ? (
+    <p style={{ margin: 0, color: "var(--text-muted)", lineHeight: 1.6 }}>{message}</p>
+  ) : (
+    <div style={{ margin: 0, color: "var(--text-muted)", lineHeight: 1.6 }}>{message}</div>
+  );
   return (
     <Modal
       isOpen={isOpen}
@@ -108,9 +113,7 @@ export function AlertModal({ isOpen, onClose, title, message, buttonText = "OK" 
         </button>
       }
     >
-      <p style={{ margin: 0, color: "var(--text-muted)", lineHeight: 1.6 }}>
-        {message}
-      </p>
+      {content}
     </Modal>
   );
 }

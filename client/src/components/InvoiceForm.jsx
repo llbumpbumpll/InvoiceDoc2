@@ -11,40 +11,63 @@ export default function InvoiceForm({ onSubmit, submitting, initialData }) {
   // Local state for header fields and line items
   const [invoiceNo, setInvoiceNo] = React.useState("");
   const [customerCode, setCustomerCode] = React.useState("");
-  const [customerLabel, setCustomerLabel] = React.useState(""); // For displaying selected customer
   const [invoiceDate, setInvoiceDate] = React.useState(new Date().toISOString().slice(0, 10));
   const [vatRate, setVatRate] = React.useState(0.07);
   const [items, setItems] = React.useState([{ product_code: "", quantity: 1, unit_price: 0 }]);
-  const [alertModal, setAlertModal] = React.useState({ isOpen: false, message: "" });
+  const [alertModal, setAlertModal] = React.useState({ isOpen: false, title: "Validation Error", message: "" });
   const [customerModalOpen, setCustomerModalOpen] = React.useState(false);
-  const [customerDetails, setCustomerDetails] = React.useState(null);
+  const [customerDetails, setCustomerDetails] = React.useState(null); // name + address (readonly)
+  const [customerLoadError, setCustomerLoadError] = React.useState("");
 
-  // When customer is selected (or set from initialData), fetch full details for display
+  // When customer code is set (from LoV or initialData), fetch name and address
   React.useEffect(() => {
-    if (!customerCode) {
+    const code = String(customerCode || "").trim();
+    if (!code) {
       setCustomerDetails(null);
+      setCustomerLoadError("");
       return;
     }
+    setCustomerLoadError("");
     let cancelled = false;
-    getCustomer(customerCode)
+    getCustomer(code)
       .then((data) => {
         if (!cancelled) setCustomerDetails(data);
       })
       .catch(() => {
-        if (!cancelled) setCustomerDetails(null);
+        if (!cancelled) {
+          setCustomerDetails(null);
+          setCustomerLoadError("Customer not found");
+        }
       });
     return () => { cancelled = true; };
   }, [customerCode]);
+
+  // Load customer by code on blur (user typed code)
+  const handleCustomerCodeBlur = () => {
+    const code = String(customerCode || "").trim();
+    if (!code) {
+      setCustomerDetails(null);
+      setCustomerLoadError("");
+      return;
+    }
+    setCustomerLoadError("");
+    getCustomer(code)
+      .then((data) => setCustomerDetails(data))
+      .catch(() => {
+        setCustomerDetails(null);
+        setCustomerLoadError("Customer not found");
+      });
+  };
 
   React.useEffect(() => {
     if (initialData) {
       setInvoiceNo(initialData.invoice_no);
       setCustomerCode(initialData.customer_code || "");
-      setCustomerLabel(initialData.customer_label || "");
       const d = initialData.invoice_date ? new Date(initialData.invoice_date).toISOString().slice(0, 10) : "";
       setInvoiceDate(d);
       setVatRate(Number(initialData.vat_rate || 0.07));
       const mappedItems = (initialData.line_items || []).map(li => ({
+        line_item_id: li.line_item_id,
         product_code: li.product_code || "",
         product_label: li.product_label || `${li.product_code || ""} - ${li.product_name || ""}`.replace(/^ - /, ""),
         quantity: li.quantity,
@@ -61,21 +84,48 @@ export default function InvoiceForm({ onSubmit, submitting, initialData }) {
   const [autoCode, setAutoCode] = React.useState(true);
 
   const hasEmptyProduct = items.some(it => !it.product_code);
-  const hasEmptyCustomer = !customerCode;
+  const hasEmptyCustomer = !String(customerCode || "").trim() || !customerDetails;
+
+  const customerAddressDisplay = customerDetails
+    ? [customerDetails.address_line1, customerDetails.address_line2, customerDetails.country_name].filter(Boolean).join(", ") || ""
+    : "";
+
+  // Collect all validation errors; return empty array if valid.
+  function validate() {
+    const errs = [];
+    if (!invoiceDate || String(invoiceDate).trim() === "") errs.push("Date should not be null");
+    if (!String(customerCode || "").trim()) errs.push("Customer Code should not be null");
+    else if (!customerDetails) errs.push("Customer must be selected from list (enter code and blur, or use LoV)");
+    if (!initialData && !autoCode && !String(invoiceNo || "").trim()) errs.push("Invoice No should not be null");
+    items.forEach((it, i) => {
+      const row = i + 1;
+      if (!String(it.product_code || "").trim()) errs.push(`Row ${row}: Product is required`);
+      else {
+        const q = Number(it.quantity);
+        if (Number.isNaN(q) || q <= 0) errs.push(`Row ${row}: Product quantity should be a positive number`);
+        const p = Number(it.unit_price);
+        if (it.unit_price !== "" && it.unit_price != null && (Number.isNaN(p) || p < 0)) errs.push(`Row ${row}: Price should be a positive number`);
+      }
+    });
+    return errs;
+  }
 
   // Build payload and pass to parent
   function handleSubmit(e) {
     e.preventDefault();
-    
-    // Validate: customer must be selected
-    if (hasEmptyCustomer) {
-      setAlertModal({ isOpen: true, message: 'Please select a customer' });
-      return;
-    }
-    
-    // Validate: all items must have a product selected
-    if (hasEmptyProduct) {
-      setAlertModal({ isOpen: true, message: 'Please select a product for all items' });
+    const errors = validate();
+    if (errors.length > 0) {
+      setAlertModal({
+        isOpen: true,
+        title: "Save Failed.",
+        message: (
+          <ul style={{ margin: 0, paddingLeft: 20, color: "var(--text-main)" }}>
+            {errors.map((msg, i) => (
+              <li key={i} style={{ marginBottom: 4 }}>{msg}</li>
+            ))}
+          </ul>
+        ),
+      });
       return;
     }
     
@@ -85,11 +135,15 @@ export default function InvoiceForm({ onSubmit, submitting, initialData }) {
       customer_code: String(customerCode).trim(),
       invoice_date: invoiceDate,
       vat_rate: Number(vatRate),
-      line_items: items.map((x) => ({
-        product_code: String(x.product_code || "").trim(),
-        quantity: Number(x.quantity),
-        unit_price: x.unit_price === "" || x.unit_price === null ? undefined : Number(x.unit_price),
-      })),
+      line_items: items.map((x) => {
+        const out = {
+          product_code: String(x.product_code || "").trim(),
+          quantity: Number(x.quantity),
+          unit_price: x.unit_price === "" || x.unit_price === null ? undefined : Number(x.unit_price),
+        };
+        if (x.line_item_id != null && Number(x.line_item_id) > 0) out.id = Number(x.line_item_id);
+        return out;
+      }),
     };
     onSubmit(payload);
   }
@@ -98,8 +152,8 @@ export default function InvoiceForm({ onSubmit, submitting, initialData }) {
     <>
       <AlertModal
         isOpen={alertModal.isOpen}
-        onClose={() => setAlertModal({ isOpen: false, message: "" })}
-        title="Validation Error"
+        onClose={() => setAlertModal((prev) => ({ ...prev, isOpen: false }))}
+        title={alertModal.title}
         message={alertModal.message}
       />
       <form onSubmit={handleSubmit} className="invoice-form">
@@ -108,7 +162,7 @@ export default function InvoiceForm({ onSubmit, submitting, initialData }) {
           <h4>Invoice Details</h4>
           <div style={{ display: "grid", gap: 12 }}>
             <div className="form-group">
-              <label className="form-label">Invoice No</label>
+              <label className="form-label">{(!initialData && autoCode) ? "Invoice No" : <>Invoice No <span className="required-marker">*</span></>}</label>
               <div className="flex gap-2">
                 <input
                   className="form-control"
@@ -127,45 +181,35 @@ export default function InvoiceForm({ onSubmit, submitting, initialData }) {
               </div>
             </div>
 
+            {/* Customer: 3 fields per ticket – code (editable + LoV), name and address (readonly) */}
             <div className="form-group">
-              <label className="form-label">Customer</label>
-              <div
-                style={{
-                  display: "flex",
-                  gap: 0,
-                  alignItems: "stretch",
-                  border: "1px solid var(--border)",
-                  borderRadius: "var(--radius-sm)",
-                  overflow: "hidden",
-                  minHeight: 38,
-                }}
-              >
+              <label className="form-label">Customer Code <span className="required-marker">*</span></label>
+              <div style={{ display: "flex", gap: 8, alignItems: "stretch" }}>
+                <input
+                  className="form-control"
+                  value={customerCode}
+                  onChange={(e) => setCustomerCode(e.target.value)}
+                  onBlur={handleCustomerCodeBlur}
+                  placeholder="e.g. C001"
+                  style={{ flex: 1 }}
+                />
                 <button
                   type="button"
-                  className="customer-select-trigger"
+                  className="btn btn-primary"
                   onClick={() => setCustomerModalOpen(true)}
-                  style={{
-                    flex: 1,
-                    textAlign: "left",
-                    padding: "8px 12px",
-                    border: "none",
-                    background: "var(--bg-surface)",
-                    color: customerLabel ? "var(--text-main)" : "var(--text-muted)",
-                    fontSize: "0.9rem",
-                    cursor: "pointer",
-                  }}
+                  title="List of Values"
                 >
-                  {customerLabel || "Select customer..."}
+                  LoV
                 </button>
-                {customerLabel && (
+                {customerCode && (
                   <button
                     type="button"
-                    onClick={() => { setCustomerCode(""); setCustomerLabel(""); setCustomerDetails(null); }}
+                    onClick={() => { setCustomerCode(""); setCustomerDetails(null); setCustomerLoadError(""); }}
                     title="Clear"
                     style={{
                       padding: "0 12px",
-                      border: "none",
-                      borderLeft: "1px solid var(--border)",
+                      border: "1px solid var(--border)",
+                      borderRadius: "var(--radius-sm)",
                       background: "var(--bg-body)",
                       color: "var(--text-muted)",
                       cursor: "pointer",
@@ -176,64 +220,38 @@ export default function InvoiceForm({ onSubmit, submitting, initialData }) {
                     ×
                   </button>
                 )}
-                <button
-                  type="button"
-                  className="btn btn-primary"
-                  style={{ borderRadius: 0, flexShrink: 0 }}
-                  onClick={() => setCustomerModalOpen(true)}
-                >
-                  Select
-                </button>
               </div>
-              {!customerCode && (
-                <span style={{ fontSize: "0.8rem", color: "var(--text-muted)", marginTop: 4, display: "block" }}>
-                  Required
-                </span>
+              {customerLoadError && (
+                <span style={{ fontSize: "0.8rem", color: "#ef4444", marginTop: 4, display: "block" }}>{customerLoadError}</span>
               )}
-
-              <div className="customer-details-readonly">
-                <div className="section-title">Customer Details</div>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "8px 12px" }}>
-                  <div className="form-group">
-                    <label className="form-label">Code</label>
-                    <input className="form-control" disabled value={customerDetails?.code ?? ""} readOnly />
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label">Name</label>
-                    <input className="form-control" disabled value={customerDetails?.name ?? ""} readOnly />
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label">Country</label>
-                    <input className="form-control" disabled value={customerDetails?.country_name ? [customerDetails.country_code, customerDetails.country_name].filter(Boolean).join(" - ") : (customerDetails?.country_code ?? "")} readOnly />
-                  </div>
-                  <div className="form-group" style={{ marginBottom: 0, gridColumn: "1 / -1" }}>
-                    <label className="form-label">Address Line 1</label>
-                    <input className="form-control" disabled value={customerDetails?.address_line1 ?? ""} readOnly />
-                  </div>
-                  <div className="form-group" style={{ marginBottom: 0, gridColumn: "1 / -1" }}>
-                    <label className="form-label">Address Line 2</label>
-                    <input className="form-control" disabled value={customerDetails?.address_line2 ?? ""} readOnly />
-                  </div>
-                  <div className="form-group" style={{ marginBottom: 0 }}>
-                    <label className="form-label">Credit Limit</label>
-                    <input className="form-control" disabled value={customerDetails?.credit_limit != null ? formatBaht(Number(customerDetails.credit_limit)) : ""} readOnly />
-                  </div>
-                </div>
-              </div>
-
-              <CustomerPickerModal
-                isOpen={customerModalOpen}
-                onClose={() => setCustomerModalOpen(false)}
-                onSelect={(code, label) => {
-                  setCustomerCode(String(code));
-                  setCustomerLabel(label);
-                }}
-              />
+              {!customerCode && (
+                <span style={{ fontSize: "0.8rem", color: "var(--text-muted)", marginTop: 4, display: "block" }}>Required. Type code and blur, or use LoV to select.</span>
+              )}
             </div>
+
+            <div className="form-group">
+              <label className="form-label">Customer Name</label>
+              <input className="form-control" disabled value={customerDetails?.name ?? ""} readOnly placeholder="—" />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Customer Address</label>
+              <input className="form-control" disabled value={customerAddressDisplay} readOnly placeholder="—" />
+            </div>
+
+            <CustomerPickerModal
+              isOpen={customerModalOpen}
+              onClose={() => setCustomerModalOpen(false)}
+              initialSearch={customerCode}
+              onSelect={(code) => {
+                setCustomerCode(String(code));
+                setCustomerModalOpen(false);
+              }}
+            />
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
               <div className="form-group">
-                <label className="form-label">Invoice Date</label>
+                <label className="form-label">Invoice Date <span className="required-marker">*</span></label>
                 <input
                   type="date"
                   className="form-control"
@@ -289,7 +307,7 @@ export default function InvoiceForm({ onSubmit, submitting, initialData }) {
             </button>
             {(hasEmptyCustomer || hasEmptyProduct) && (
               <div style={{ marginTop: 6, fontSize: '0.75rem', color: '#ef4444', textAlign: 'center' }}>
-                {hasEmptyCustomer && <div>Please select a customer</div>}
+                {hasEmptyCustomer && <div>Please enter customer code or select from LoV</div>}
                 {hasEmptyProduct && <div>Please select a product for all items</div>}
               </div>
             )}

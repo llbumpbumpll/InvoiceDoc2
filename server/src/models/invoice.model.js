@@ -9,6 +9,7 @@ export const CreateInvoiceSchema = z.object({
   line_items: z
     .array(
       z.object({
+        id: z.number().int().optional(), // invoice_line_item.id when updating existing row
         product_code: z.string().min(1, "Product code is required"),
         quantity: z.number().positive(),
         unit_price: z.number().nonnegative().optional(),

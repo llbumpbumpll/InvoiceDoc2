@@ -406,6 +406,13 @@ button {
   font-size: 0.9rem;
 }
 
+.required-marker {
+  color: #dc2626;
+  font-weight: 700;
+  font-size: 1.05em;
+  margin-left: 2px;
+}
+
 .form-control {
   width: 100%;
   padding: 10px 14px;

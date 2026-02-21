@@ -83,7 +83,8 @@ export async function getInvoice(idOrInvoiceNo) {
 
   const lines = await pool.query(
     `
-      select p.code as product_code, p.name as product_name,
+      select li.id,
+             p.code as product_code, p.name as product_name,
              u.code as units_code,
              li.quantity, li.unit_price, li.extended_price
       from invoice_line_item li
@@ -248,20 +249,42 @@ export async function updateInvoice(
       [resolvedInvoiceNo, invoice_date, customer_id, total, vat, amount_due, id],
     );
 
-    await client.query("DELETE FROM invoice_line_item WHERE invoice_id=$1", [id]);
+    const keptLineIds = line_items.filter((li) => li.id != null && Number(li.id) > 0).map((li) => Number(li.id));
+
+    if (keptLineIds.length > 0) {
+      await client.query(
+        "DELETE FROM invoice_line_item WHERE invoice_id = $1 AND id != ALL($2::bigint[])",
+        [id, keptLineIds],
+      );
+    } else {
+      await client.query("DELETE FROM invoice_line_item WHERE invoice_id = $1", [id]);
+    }
 
     for (const li of enriched) {
-      await client.query(
-        `
-          INSERT INTO invoice_line_item (id, created_at, invoice_id, product_id, quantity, unit_price, extended_price)
-          VALUES (
-            (select coalesce(max(id),0)+1 from invoice_line_item),
-            now(),
-            $1,$2,$3,$4,$5
-          )
-        `,
-        [id, li.product_id, li.quantity, li.unit_price, li.extended_price],
-      );
+      const lineId = li.id != null && Number(li.id) > 0 ? Number(li.id) : null;
+      const extended_price = Number(li.quantity || 0) * Number(li.unit_price || 0);
+      if (lineId) {
+        await client.query(
+          `
+            UPDATE invoice_line_item
+            SET product_id=$1, quantity=$2, unit_price=$3, extended_price=$4
+            WHERE id=$5 AND invoice_id=$6
+          `,
+          [li.product_id, li.quantity, li.unit_price, extended_price, lineId, id],
+        );
+      } else {
+        await client.query(
+          `
+            INSERT INTO invoice_line_item (id, created_at, invoice_id, product_id, quantity, unit_price, extended_price)
+            VALUES (
+              (select coalesce(max(id),0)+1 from invoice_line_item),
+              now(),
+              $1,$2,$3,$4,$5
+            )
+          `,
+          [id, li.product_id, li.quantity, li.unit_price, extended_price],
+        );
+      }
     }
 
     await client.query("commit");

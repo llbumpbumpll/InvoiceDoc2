@@ -8,6 +8,7 @@ import { toast } from "react-toastify";
 import { listCountries, getCustomer, createCustomer, updateCustomer } from "../../api/customers.api.js";
 import { formatBaht } from "../../utils.js";
 import Loading from "../../components/Loading.jsx";
+import { AlertModal } from "../../components/Modal.jsx";
 
 export default function CustomerPage({ mode: propMode }) {
     const { id } = useParams();
@@ -20,9 +21,20 @@ export default function CustomerPage({ mode: propMode }) {
     const [submitting, setSubmitting] = React.useState(false);
     const [loading, setLoading] = React.useState(mode !== "create");
     const [autoCode, setAutoCode] = React.useState(true);
+    const [alertModal, setAlertModal] = React.useState({ isOpen: false, title: "Validation Error", message: "" });
     const [form, setForm] = React.useState({
         code: "", name: "", address_line1: "", address_line2: "", country_id: "", credit_limit: ""
     });
+
+    function validate() {
+        const errs = [];
+        const isCreateMode = mode === "create";
+        if (isCreateMode && !autoCode && !String(form.code || "").trim()) errs.push("Code should not be null");
+        if (!isCreateMode && !String(form.code || "").trim()) errs.push("Code should not be null");
+        if (!String(form.name || "").trim()) errs.push("Name should not be null");
+        if (!String(form.country_id || "").trim()) errs.push("Country should be selected");
+        return errs;
+    }
 
     React.useEffect(() => {
         if (mode === "create") {
@@ -56,6 +68,21 @@ export default function CustomerPage({ mode: propMode }) {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        const errors = validate();
+        if (errors.length > 0) {
+            setAlertModal({
+                isOpen: true,
+                title: "Save Failed.",
+                message: (
+                    <ul style={{ margin: 0, paddingLeft: 20, color: "var(--text-main)" }}>
+                        {errors.map((msg, i) => (
+                            <li key={i} style={{ marginBottom: 4 }}>{msg}</li>
+                        ))}
+                    </ul>
+                ),
+            });
+            return;
+        }
         setErr("");
         setSubmitting(true);
         try {
@@ -163,11 +190,18 @@ export default function CustomerPage({ mode: propMode }) {
 
             {err && <div className="alert alert-error">{err}</div>}
 
+            <AlertModal
+                isOpen={alertModal.isOpen}
+                onClose={() => setAlertModal((p) => ({ ...p, isOpen: false }))}
+                title={alertModal.title}
+                message={alertModal.message}
+            />
+
             <div className="card">
                 <form onSubmit={handleSubmit}>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '1rem', marginBottom: '1rem' }}>
                         <div className="form-group">
-                            <label className="form-label">Code</label>
+                            <label className="form-label">{(mode === "create" && autoCode) ? "Code" : <>Code <span className="required-marker">*</span></>}</label>
                             {isCreate ? (
                                 <div className="flex gap-2">
                                     <input
@@ -194,7 +228,7 @@ export default function CustomerPage({ mode: propMode }) {
                             )}
                         </div>
                         <div className="form-group">
-                            <label className="form-label">Name</label>
+                            <label className="form-label">Name <span className="required-marker">*</span></label>
                             <input className="form-control" required value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Customer Name" />
                         </div>
                     </div>
@@ -212,7 +246,7 @@ export default function CustomerPage({ mode: propMode }) {
 
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
                         <div className="form-group">
-                            <label className="form-label">Country</label>
+                            <label className="form-label">Country <span className="required-marker">*</span></label>
                             <select className="form-control" required value={form.country_id} onChange={e => setForm({ ...form, country_id: e.target.value })}>
                                 <option value="">Select Country</option>
                                 {countries.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}

@@ -14,7 +14,7 @@ const COLUMNS = [
   { key: "credit_limit", label: "Credit Limit", align: "right", render: (v) => (v != null ? formatBaht(v) : "-") },
 ];
 
-export default function CustomerPickerModal({ isOpen, onClose, onSelect }) {
+export default function CustomerPickerModal({ isOpen, onClose, onSelect, initialSearch = "" }) {
   const fetchData = React.useCallback((params) => listCustomers(params), []);
 
   const handleSelect = React.useCallback(
@@ -30,6 +30,7 @@ export default function CustomerPickerModal({ isOpen, onClose, onSelect }) {
       isOpen={isOpen}
       onClose={onClose}
       onSelect={handleSelect}
+      initialSearch={initialSearch}
       title="Select Customer"
       searchPlaceholder="Search code, name, address..."
       fetchData={fetchData}
