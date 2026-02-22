@@ -1,5 +1,12 @@
 # InvoiceDoc v2
 
+[![InvoiceDoc2](https://img.shields.io/badge/InvoiceDoc2-v2.0-232F3E)](.)
+[![React](https://img.shields.io/badge/React-18-61DAFB?logo=react)](https://react.dev/)
+[![Node.js](https://img.shields.io/badge/Node.js-18%2B-339933?logo=nodedotjs)](https://nodejs.org/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-17-4169E1?logo=postgresql)](https://www.postgresql.org/)
+[![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker)](https://www.docker.com/)
+[![License](https://img.shields.io/badge/License-MIT-yellowgreen)](.)
+
 A full-stack Invoice Management System built with React, Express, and PostgreSQL.
 
 ## 📦 Required software & downloads
