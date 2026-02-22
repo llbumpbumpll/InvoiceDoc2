@@ -22,6 +22,8 @@ Install these before running the project:
 - **Docker Desktop:** Start Docker before using `npm run docker:db:start` or `docker-compose`.
 - **yarn** (optional): [https://classic.yarnpkg.com/](https://classic.yarnpkg.com/) — you can use `npm` only.
 
+All `npm run` scripts (e.g. `docker:db:start`, `docker:db:stop`) are implemented in Node.js and work on **Windows, macOS, and Linux**.
+
 ## 🚀 Quick Start (Local Development)
 
 Recommended: run the database in Docker, then run server and client in the terminal.
