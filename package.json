@@ -3,17 +3,17 @@
   "version": "2.0.0",
   "description": "InvoiceDoc2 - Invoice Management System",
   "scripts": {
-    "docker:start": "./docker-start.sh",
-    "docker:stop": "./docker-stop.sh",
-    "docker:logs": "./docker-logs.sh",
+    "docker:start": "./scripts/docker-start.sh",
+    "docker:stop": "./scripts/docker-stop.sh",
+    "docker:logs": "./scripts/docker-logs.sh",
     "docker:up": "docker-compose up -d --build",
     "docker:down": "docker-compose down",
     "docker:ps": "docker-compose ps",
     "docker:restart": "docker-compose restart",
-    "docker:db:start": "./docker-db-start.sh",
-    "docker:db:stop": "./docker-db-stop.sh",
-    "docker:db:check": "./docker-db-check.sh",
-    "docker:db:logs": "docker-compose -f docker-compose.db.yml logs -f",
-    "docker:db:ps": "docker-compose -f docker-compose.db.yml ps"
+    "docker:db:start": "./scripts/docker-db-start.sh",
+    "docker:db:stop": "./scripts/docker-db-stop.sh",
+    "docker:db:check": "./scripts/docker-db-check.sh",
+    "docker:db:logs": "docker-compose -f database/compose.yaml logs -f",
+    "docker:db:ps": "docker-compose -f database/compose.yaml ps"
   }
 }

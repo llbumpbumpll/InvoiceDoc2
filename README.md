@@ -2,83 +2,34 @@
 
 A full-stack Invoice Management System built with React, Express, and PostgreSQL.
 
-## 🚀 Quick Start
+## 🚀 Quick Start (Local Development)
+
+Recommended: run the database in Docker, then run server and client in the terminal.
 
 ### Prerequisites
-- Node.js (v18+) - for local development
-- Docker Desktop - for Docker deployment or database only
+- Node.js (v18+)
+- Docker Desktop (for the database)
 - npm or yarn
 
-### Option 1: Docker Deployment (Recommended)
-
-Run everything with Docker Compose:
+### Step 1: Start the database (run this first)
 
 ```bash
-# Start all services (database, server, client)
-./docker-start.sh
-
-# Or using npm
-npm run docker:start
-
-# Or using docker-compose directly
-docker-compose up -d --build
+npm run docker:db:start
 ```
 
-**Access URLs:**
-- Client: http://localhost:3000
-- Server API: http://localhost:4000
-- Database: localhost:15432
-- Adminer (DB Admin): http://localhost:8080
+This starts PostgreSQL from `database/compose.yaml` and runs the schema/seed script. When it finishes you should see "Database is ready!".
 
-**Useful Commands:**
-```bash
-# Stop services
-./docker-stop.sh
-# or
-npm run docker:stop
+**DB access:** Host `localhost:15432` | Database `invoices_db` | User `root` | Password `root`  
+**Adminer (web UI):** http://localhost:8080
 
-# View logs
-./docker-logs.sh
-# or view specific service
-./docker-logs.sh server
+**Useful DB commands:**
+- `npm run docker:db:stop` — Stop the database
+- `npm run docker:db:check` — Check status and row counts
+- `npm run docker:db:logs` — View DB logs
 
-# Check status
-docker-compose ps
-```
+### Step 2: Run the server
 
-For detailed Docker documentation, see [README.DOCKER.md](./README.DOCKER.md)
-
-### Option 2: Local Development Setup
-
-#### 1. Database Setup
-
-Start PostgreSQL using Docker Compose:
-
-```bash
-cd database
-docker-compose up -d
-```
-
-Run the database setup script:
-
-```bash
-./setup_db.sh
-```
-
-Or manually run SQL:
-
-```bash
-PGPASSWORD=root psql -h localhost -p 15432 -U root -d invoices_db -f sql/sql_run.sql
-```
-
-**Database Access:**
-- Host: `localhost:15432`
-- Database: `invoices_db`
-- Username: `root`
-- Password: `root`
-- Adminer (Web UI): http://localhost:8080
-
-#### 2. Server Setup
+Open a terminal:
 
 ```bash
 cd server
@@ -87,13 +38,12 @@ npm install
 npm run dev
 ```
 
-Server runs on: http://localhost:4000
+Server: http://localhost:4000  
+Set `DATABASE_URL` in `.env` if needed (default: `postgresql://root:root@localhost:15432/invoices_db`).
 
-**Environment Variables:**
-- `PORT`: Server port (default: 4000)
-- `DATABASE_URL`: PostgreSQL connection string (default: `postgresql://root:root@localhost:15432/invoices_db`)
+### Step 3: Run the client
 
-#### 3. Client Setup
+Open another terminal:
 
 ```bash
 cd client
@@ -102,10 +52,30 @@ npm install
 npm run dev
 ```
 
-Client runs on: http://localhost:5173
+Client: http://localhost:5173  
+Set `VITE_API_BASE` in `.env` if needed (default: `http://localhost:4000`).
 
-**Environment Variables:**
-- `VITE_API_BASE`: Backend API URL (default: `http://localhost:4000`)
+---
+
+## 🐳 Docker Compose (Deployment)
+
+Use this when you want to run **everything** in containers (database + server + client) for deployment or full-stack run.
+
+```bash
+npm run docker:start
+# or
+docker-compose up -d --build
+```
+
+**Access:** Client http://localhost:3000 | Server http://localhost:4000 | DB localhost:15432 | Adminer http://localhost:8080
+
+```bash
+npm run docker:stop    # Stop all
+npm run docker:logs    # Logs (optional: npm run docker:logs server)
+npm run docker:ps      # Status
+```
+
+See [README.DOCKER.md](./README.DOCKER.md) for deployment details.
 
 ## 📁 Project Structure
 
@@ -145,9 +115,13 @@ InvoiceDoc2/
 │   └── generate_sql_run.py      # Generate sql_run.sql from CSV
 ├── docker-compose.yml           # Full stack (database + server + client)
 ├── docker-compose.coolify.yml   # Server + client only (DB via env)
-├── docker-start.sh
-├── docker-stop.sh
-├── docker-logs.sh
+├── scripts/                     # Shell scripts (run from repo root)
+│   ├── docker-start.sh          # Start full stack
+│   ├── docker-stop.sh           # Stop full stack
+│   ├── docker-logs.sh           # View logs
+│   ├── docker-db-start.sh       # Start DB only + setup_db
+│   ├── docker-db-stop.sh        # Stop DB only
+│   └── docker-db-check.sh       # Check DB status & counts
 ├── README.DOCKER.md             # Docker deployment guide
 ├── GUIDE.md                     # Project guide (Thai/English)
 └── PROJECT_STRUCTURE.md         # Detailed structure notes
@@ -227,6 +201,27 @@ InvoiceDoc2/
 - **Deployment**: Docker, Docker Compose
 - **Tools**: Adminer, serve (static file server)
 
+## 📜 NPM Scripts (root package.json)
+
+**Local dev (run DB first, then server/client in terminal):**
+| Command | Description |
+|---------|-------------|
+| `npm run docker:db:start` | Start database only + run schema/seed *(run this first)* |
+| `npm run docker:db:stop` | Stop database |
+| `npm run docker:db:check` | Check DB status and table row counts |
+| `npm run docker:db:logs` | View database container logs |
+| `npm run docker:db:ps` | Show database container status |
+
+**Deploy / full stack in Docker:**
+| Command | Description |
+|---------|-------------|
+| `npm run docker:start` | Start all services (DB + server + client) in containers |
+| `npm run docker:stop` | Stop all |
+| `npm run docker:logs [service]` | View logs (optional: server, client, database) |
+| `npm run docker:ps` | Show container status |
+
+Scripts live in `scripts/`. DB commands use `database/compose.yaml`.
+
 ## 📝 Development Notes
 
 ### Auto-Numbering
@@ -258,9 +253,9 @@ InvoiceDoc2/
 
 ### Database Connection Error
 If you see `relation "invoice" does not exist`:
-1. Make sure Docker container is running: `docker-compose ps`
-2. Run the setup script: `./setup_db.sh`
-3. Or manually run SQL: `psql -h localhost -p 15432 -U root -d invoices_db -f sql/sql_run.sql`
+1. Start DB and apply schema: `npm run docker:db:start`
+2. Or manually: `cd database && docker-compose up -d && ./setup_db.sh`
+3. Or run SQL directly: `cd database && PGPASSWORD=root psql -h localhost -p 15432 -U root -d invoices_db -f sql/sql_run.sql`
 
 ### Port Already in Use
 - Change `PORT` in `server/.env` for backend
