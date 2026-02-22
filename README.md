@@ -2,14 +2,26 @@
 
 A full-stack Invoice Management System built with React, Express, and PostgreSQL.
 
+## 📦 Required software & downloads
+
+Install these before running the project:
+
+| Resource | Purpose | Download |
+|----------|---------|----------|
+| **Node.js** (v18 or newer) | Run server and client; includes **npm** | [https://nodejs.org/](https://nodejs.org/) |
+| **Docker Desktop** | Run PostgreSQL (and optional full stack) | [https://www.docker.com/products/docker-desktop/](https://www.docker.com/products/docker-desktop/) |
+
+- **Node.js:** Choose LTS. After install, check: `node -v` and `npm -v`.
+- **Docker Desktop:** Start Docker before using `npm run docker:db:start` or `docker-compose`.
+- **yarn** (optional): [https://classic.yarnpkg.com/](https://classic.yarnpkg.com/) — you can use `npm` only.
+
 ## 🚀 Quick Start (Local Development)
 
 Recommended: run the database in Docker, then run server and client in the terminal.
 
 ### Prerequisites
-- Node.js (v18+)
-- Docker Desktop (for the database)
-- npm or yarn
+- Node.js (v18+) and npm — see [downloads](#-required-software--downloads) above.
+- Docker Desktop — see [downloads](#-required-software--downloads) above.
 
 ### Step 1: Start the database (run this first)
 
