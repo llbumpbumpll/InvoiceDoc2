@@ -148,13 +148,18 @@ export default function Reports({ type = "product-sales" }) {
     setSortDir("asc");
   }, [type]);
 
+  // After Apply: fetch uses new appliedFilters (state updates are async, so we fetch in next render)
+  React.useEffect(() => {
+    if (!hasApplied) return;
+    fetchData(1, limit);
+  }, [hasApplied, appliedFilters, fetchData, limit]);
+
   const handleApply = () => {
     setAppliedFilters({ ...filters });
     setHasApplied(true);
     setPage(1);
     setSortKey(null);
     setSortDir("asc");
-    fetchData(1, limit);
   };
 
   const handleSort = (key, dir) => {
