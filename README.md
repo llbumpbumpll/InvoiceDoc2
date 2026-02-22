@@ -305,4 +305,4 @@ We ask this so that juniors using this repo actually learn: we’d rather they g
 
 ## 📄 License
 
-This project is a template for learning and development purposes.
+This project is licensed under the **MIT License**. It is intended as a template for learning and development purposes.
