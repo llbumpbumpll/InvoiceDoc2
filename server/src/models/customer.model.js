@@ -15,8 +15,8 @@ export const CreateCustomerBodySchema = z.object({
   name: z.string().min(1),
   address_line1: z.string().optional(),
   address_line2: z.string().optional(),
-  country_id: z.number().int().optional(),
-  credit_limit: z.number().optional(),
+  country_id: z.coerce.number().int().optional(),
+  credit_limit: z.coerce.number().optional(),
 });
 
 export const UpdateCustomerBodySchema = z.object({
@@ -24,7 +24,7 @@ export const UpdateCustomerBodySchema = z.object({
   name: z.string().optional(),
   address_line1: z.string().optional(),
   address_line2: z.string().optional(),
-  country_id: z.number().int().optional(),
-  credit_limit: z.number().optional(),
+  country_id: z.coerce.number().int().optional(),
+  credit_limit: z.coerce.number().optional(),
 });
 

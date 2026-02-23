@@ -12,14 +12,14 @@ export const ProductSchema = z.object({
 export const CreateProductBodySchema = z.object({
   code: z.string().optional(),
   name: z.string().min(1),
-  units_id: z.number().int(),
-  unit_price: z.number().optional(),
+  units_id: z.coerce.number().int(),
+  unit_price: z.coerce.number().optional(),
 });
 
 export const UpdateProductBodySchema = z.object({
   code: z.string().optional(),
   name: z.string().optional(),
-  units_id: z.number().int().optional(),
-  unit_price: z.number().optional(),
+  units_id: z.coerce.number().int().optional(),
+  unit_price: z.coerce.number().optional(),
 });
 
