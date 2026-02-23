@@ -2,6 +2,8 @@
 // Example usage: pool.query("SELECT 1")
 import pg from "pg";
 import dotenv from "dotenv";
+import logger from "../utils/logger.js";
+
 dotenv.config();
 
 // Default DATABASE_URL if not set in environment
@@ -9,4 +11,8 @@ const DEFAULT_DATABASE_URL = "postgresql://root:root@localhost:15432/invoices_db
 
 export const pool = new pg.Pool({
   connectionString: process.env.DATABASE_URL || DEFAULT_DATABASE_URL,
+});
+
+pool.on("error", (err) => {
+  logger.error("Database pool error", { message: err.message });
 });

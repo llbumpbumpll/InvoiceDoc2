@@ -1,8 +1,8 @@
-# A Docker Compose must always start with the version tag.
-# We use '3' because it's the last version.
-version: "3"
+# Docker Compose file (version attribute is obsolete in Compose V2 and is omitted)
 # Use postgres/example user/password credentials
-
+#
+# Windows: If you see "exec format error", remove the cached image and start again:
+#   docker compose down  then  docker rmi postgres:17  then  docker compose up -d
 
 # You should know that Docker Compose works with services.
 # 1 service = 1 container.
