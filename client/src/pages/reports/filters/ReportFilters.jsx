@@ -15,7 +15,7 @@ export default function ReportFilters({ type, filters, onChange, onApply, onRese
         {/* Product Sales Filters */}
         {type === "product-sales" && (
           <>
-            <ProductFilter value={filters.productCode || ""} onChange={handleChange} />
+            <ProductFilter value={filters.productCode || ""} displayLabel={filters.productLabel} onChange={handleChange} />
             <DateRangeFilter 
               dateFrom={filters.dateFrom || ""} 
               dateTo={filters.dateTo || ""} 
@@ -27,7 +27,7 @@ export default function ReportFilters({ type, filters, onChange, onApply, onRese
         {/* Monthly Sales Filters */}
         {type === "monthly-sales" && (
           <>
-            <ProductFilter value={filters.productCode || ""} onChange={handleChange} />
+            <ProductFilter value={filters.productCode || ""} displayLabel={filters.productLabel} onChange={handleChange} />
             <YearMonthFilter 
               year={filters.year || ""} 
               month={filters.month || ""} 
@@ -44,8 +44,8 @@ export default function ReportFilters({ type, filters, onChange, onApply, onRese
         {/* Customer Sales Filters */}
         {type === "customer-sales" && (
           <>
-            <ProductFilter value={filters.productCode || ""} onChange={handleChange} />
-            <CustomerFilter value={filters.customerCode || ""} onChange={handleChange} />
+            <ProductFilter value={filters.productCode || ""} displayLabel={filters.productLabel} onChange={handleChange} />
+            <CustomerFilter value={filters.customerCode || ""} displayLabel={filters.customerLabel} onChange={handleChange} />
             <DateRangeFilter 
               dateFrom={filters.dateFrom || ""} 
               dateTo={filters.dateTo || ""} 
