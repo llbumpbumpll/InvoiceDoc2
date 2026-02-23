@@ -2,12 +2,14 @@
 import * as invoicesService from "../services/invoices.service.js";
 import { CreateInvoiceSchema } from "../models/invoice.model.js";
 import { sendList, sendOne, sendCreated, sendOk, sendError } from "../utils/response.js";
+import logger from "../utils/logger.js";
 
 export async function listInvoices(req, res) {
   try {
     const result = await invoicesService.listInvoices(req.query);
     sendList(res, result);
   } catch (err) {
+    logger.error("listInvoices failed", { error: err?.message ?? String(err) });
     sendError(res, err?.message ?? String(err), 500);
   }
 }
@@ -19,6 +21,7 @@ export async function getInvoice(req, res) {
     if (!result) return sendError(res, "Invoice not found", 404);
     sendOne(res, result);
   } catch (err) {
+    logger.error("getInvoice failed", { invoiceNo: req.params.invoiceNo, error: err?.message ?? String(err) });
     sendError(res, err?.message ?? String(err), 500);
   }
 }
@@ -31,6 +34,7 @@ export async function createInvoice(req, res) {
     const result = await invoicesService.createInvoice(parsed.data);
     sendCreated(res, result);
   } catch (err) {
+    logger.error("createInvoice failed", { error: err?.message ?? String(err) });
     sendError(res, err?.message ?? String(err), 500);
   }
 }
@@ -42,6 +46,7 @@ export async function deleteInvoice(req, res) {
     if (!result) return sendError(res, "Invoice not found", 404);
     sendOk(res, result);
   } catch (err) {
+    logger.error("deleteInvoice failed", { invoiceNo: req.params.invoiceNo, error: err?.message ?? String(err) });
     sendError(res, err?.message ?? String(err), 500);
   }
 }
@@ -55,6 +60,7 @@ export async function updateInvoice(req, res) {
     if (!result) return sendError(res, "Invoice not found", 404);
     sendOk(res, result);
   } catch (err) {
+    logger.error("updateInvoice failed", { invoiceNo: req.params.invoiceNo, error: err?.message ?? String(err) });
     sendError(res, err?.message ?? String(err), 500);
   }
 }
