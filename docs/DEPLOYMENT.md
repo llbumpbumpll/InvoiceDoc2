@@ -104,7 +104,7 @@ In the Web Service **Environment** section, add:
 |-----|--------|--------|
 | `DATABASE_URL` | (Supabase connection string with password filled in) | **Required** for the backend to connect to PostgreSQL. |
 | `NODE_ENV` | `production` | Recommended so the app runs in production mode. |
-| `CORS_ORIGIN` | Frontend URL on Vercel, e.g. `https://invoicedoc2-xxxx.vercel.app` | **Important:** without this, the frontend cannot call the API (if left empty the backend allows all origins — after deploying the frontend, come back and set this). |
+| `CORS_ORIGIN` | Frontend URL on Vercel, e.g. `https://invoicedoc2-xxxx.vercel.app` | **Important:** without this, the frontend cannot call the API. You can **skip this for now** — we don’t have the frontend URL yet. We’ll set it in **section 3.6** after the frontend is deployed. (If left empty, the backend allows all origins until then.) |
 
 Add any other env vars your code expects (e.g. PORT is set automatically by Render).
 
