@@ -11,6 +11,7 @@ import CustomerPage from "./pages/customers/CustomerPage.jsx";
 import ProductList from "./pages/products/ProductList.jsx";
 import ProductPage from "./pages/products/ProductPage.jsx";
 import Reports from "./pages/reports/Reports.jsx";
+import { http } from "./api/http.js";
 import "./index.css";
 
 // Collapsible submenu (e.g. Reports → Product Sales, Monthly Sales)
@@ -96,6 +97,45 @@ function Sidebar() {
   );
 }
 
+// Banner when repo has newer commits (server returns updateAvailable if GIT_SHA is set and behind GitHub)
+function UpdateBanner() {
+  const [show, setShow] = React.useState(false);
+  const [repoUrl, setRepoUrl] = React.useState("");
+  const DISMISS_KEY = "invoicedoc2-update-banner-dismissed";
+
+  React.useEffect(() => {
+    if (localStorage.getItem(DISMISS_KEY)) return;
+    http("/api/updates-check")
+      .then((data) => {
+        if (data.updateAvailable && data.repoUrl) {
+          setShow(true);
+          setRepoUrl(data.repoUrl);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const dismiss = () => {
+    localStorage.setItem(DISMISS_KEY, "1");
+    setShow(false);
+  };
+
+  if (!show) return null;
+  return (
+    <div className="update-banner no-print">
+      <span>
+        Update available: the repo has new changes — run <code>git pull origin</code> in your project folder to get the latest, or check{" "}
+        <a href={repoUrl} target="_blank" rel="noreferrer">
+          GitHub
+        </a>
+      </span>
+      <button type="button" className="update-banner-dismiss" onClick={dismiss} aria-label="Close">
+        ×
+      </button>
+    </div>
+  );
+}
+
 // Mobile warning overlay
 function MobileWarning() {
   const [dismissed, setDismissed] = React.useState(false);
@@ -123,6 +163,7 @@ function Layout({ children }) {
     <div className="layout-container">
       <ToastContainer position="bottom-right" autoClose={4000} hideProgressBar={false} theme="light" />
       <MobileWarning />
+      <UpdateBanner />
       <div className="top-banner no-print">
         This is a sample term project for CPE241 Database Systems. Some functions may be incomplete. Click
         <a href="https://google.com" target="_blank" rel="noreferrer">here for questions</a>

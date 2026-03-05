@@ -233,6 +233,11 @@ InvoiceDoc2/
 | `npm run docker:db:logs` | View database container logs |
 | `npm run docker:db:ps` | Show database container status |
 
+**Repo sync (pull latest from upstream):**
+| Command | Description |
+|---------|-------------|
+| `npm run sync` | Check [llbumpbumpll/InvoiceDoc2](https://github.com/llbumpbumpll/InvoiceDoc2); if your branch is behind, pull the latest |
+
 **Deploy / full stack in Docker:**
 | Command | Description |
 |---------|-------------|

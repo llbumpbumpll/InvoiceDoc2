@@ -17,6 +17,7 @@
     "docker:db:logs": "docker-compose -f database/compose.yaml logs -f",
     "docker:db:ps": "docker-compose -f database/compose.yaml ps",
     "db:setup": "node database/setup_db.js",
-    "db:reset": "node database/setup_db.js --reset"
+    "db:reset": "node database/setup_db.js --reset",
+    "sync": "node scripts/check-and-pull.js"
   }
 }

@@ -1,6 +1,9 @@
 // Backend entry: receives HTTP requests and forwards to routes (customers, products, invoices, reports)
 import express from "express";
 import cors from "cors";
+import { execSync } from "child_process";
+import path from "path";
+import fs from "fs";
 
 import logger from "./utils/logger.js";
 import invoicesRoutes from "./routes/invoices.routes.js";
@@ -56,6 +59,48 @@ app.use(express.json());
 
 // Health check
 app.get("/health", (_, res) => res.json({ ok: true }));
+
+// Check if repo has newer commits (for frontend update banner). Uses GIT_SHA from env, or git rev-parse when running dev.
+const REPO = "llbumpbumpll/InvoiceDoc2";
+const REPO_URL = `https://github.com/${REPO}`;
+function getCurrentSha() {
+  const fromEnv = process.env.GIT_SHA || process.env.VERCEL_GIT_COMMIT_SHA || process.env.RENDER_GIT_COMMIT_SHA;
+  if (fromEnv) return fromEnv.trim();
+  let repoRoot = process.cwd();
+  if (!fs.existsSync(path.join(repoRoot, ".git"))) {
+    repoRoot = path.resolve(repoRoot, "..");
+  }
+  try {
+    return execSync("git rev-parse HEAD", { cwd: repoRoot, encoding: "utf8" }).trim();
+  } catch {
+    return null;
+  }
+}
+app.get("/api/updates-check", async (_, res) => {
+  const currentSha = getCurrentSha();
+  if (!currentSha) {
+    res.setHeader("X-Update-Available", "false");
+    return res.json({ updateAvailable: false });
+  }
+  try {
+    const r = await fetch(`https://api.github.com/repos/${REPO}/commits/main`, {
+      headers: { Accept: "application/vnd.github.v3+json" },
+    });
+    if (!r.ok) {
+      res.setHeader("X-Update-Available", "false");
+      return res.json({ updateAvailable: false });
+    }
+    const data = await r.json();
+    const latestSha = data?.sha;
+    const updateAvailable = !!latestSha && latestSha !== currentSha;
+    res.setHeader("X-Update-Available", updateAvailable ? "true" : "false");
+    if (updateAvailable) res.setHeader("X-Update-Repo-Url", REPO_URL);
+    res.json({ updateAvailable, repoUrl: REPO_URL });
+  } catch {
+    res.setHeader("X-Update-Available", "false");
+    res.json({ updateAvailable: false });
+  }
+});
 
 // API routes
 app.use("/api/customers", customersRoutes);
