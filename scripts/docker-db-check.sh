@@ -6,7 +6,7 @@ COMPOSE_DB="database/compose.yaml"
 SVC="pgdatabase"
 
 echo "🔍 Checking InvoiceDoc2 Database..."
-CONTAINER=$(docker-compose -f "$COMPOSE_DB" ps -q "$SVC" 2>/dev/null)
+CONTAINER=$(docker compose -f "$COMPOSE_DB" ps -q "$SVC" 2>/dev/null)
 if [ -z "$CONTAINER" ] || ! docker ps -q --no-trunc | grep -q "$CONTAINER"; then
     echo "❌ Database container is not running. Start it: npm run docker:db:start"
     exit 1

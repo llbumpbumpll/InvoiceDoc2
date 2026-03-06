@@ -11,12 +11,12 @@ const svc = "pgdatabase";
 const adminerSvc = "adminer";
 
 function runCompose(args, opts = {}) {
-  const r = spawnSafe("docker-compose", ["-f", composeDb, ...args], { cwd: root, stdio: "inherit", ...opts });
+  const r = spawnSafe("docker", ["compose", "-f", composeDb, ...args], { cwd: root, stdio: "inherit", ...opts });
   return r.status === 0;
 }
 
 function runComposeQuiet(args, opts = {}) {
-  const r = spawnSafe("docker-compose", ["-f", composeDb, ...args], { cwd: root, encoding: "utf8", stdio: ["pipe", "pipe", "pipe"], ...opts });
+  const r = spawnSafe("docker", ["compose", "-f", composeDb, ...args], { cwd: root, encoding: "utf8", stdio: ["pipe", "pipe", "pipe"], ...opts });
   return r.status === 0;
 }
 

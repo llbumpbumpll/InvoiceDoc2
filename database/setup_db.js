@@ -13,12 +13,12 @@ const composePath = path.join(scriptDir, "compose.yaml");
 const shouldReset = process.argv.includes("--reset");
 
 function runCompose(args, opts = {}) {
-  const r = spawnSafe("docker-compose", ["-f", composePath, ...args], { cwd: opts.cwd || root, stdio: "inherit", ...opts });
+  const r = spawnSafe("docker", ["compose", "-f", composePath, ...args], { cwd: opts.cwd || root, stdio: "inherit", ...opts });
   return r.status === 0;
 }
 
 function runComposeQuiet(args, opts = {}) {
-  const r = spawnSafe("docker-compose", ["-f", composePath, ...args], {
+  const r = spawnSafe("docker", ["compose", "-f", composePath, ...args], {
     cwd: opts.cwd || root,
     encoding: "utf8",
     stdio: ["pipe", "pipe", "pipe"],
@@ -52,8 +52,8 @@ function dockerQuery(containerName, sql) {
 
 function composeExecSql(sqlContent) {
   const r = spawnSafe(
-    "docker-compose",
-    ["-f", composePath, "exec", "-T", "pgdatabase", "psql", "-v", "ON_ERROR_STOP=1", "-U", "root", "-d", "invoices_db"],
+    "docker",
+    ["compose", "-f", composePath, "exec", "-T", "pgdatabase", "psql", "-v", "ON_ERROR_STOP=1", "-U", "root", "-d", "invoices_db"],
     { input: sqlContent, cwd: root, stdio: ["pipe", "inherit", "inherit"] }
   );
   return r.status === 0;

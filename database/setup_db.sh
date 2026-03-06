@@ -44,14 +44,14 @@ docker_has_data() {
 
 compose_run_file() {
     local sql_file="$1"
-    docker-compose exec -T pgdatabase psql -U root -d invoices_db < "$sql_file" 2>&1
+    docker compose exec -T pgdatabase psql -U root -d invoices_db < "$sql_file" 2>&1
 }
 
 compose_has_data() {
     local table
     local out
     for table in "${PROBE_TABLES[@]}"; do
-        out="$(docker-compose exec -T pgdatabase psql -U root -d invoices_db -t -A -c "select 1 from $table limit 1;" 2>/dev/null | tr -d '[:space:]')"
+        out="$(docker compose exec -T pgdatabase psql -U root -d invoices_db -t -A -c "select 1 from $table limit 1;" 2>/dev/null | tr -d '[:space:]')"
         if [ "$out" = "1" ]; then
             return 0
         fi
@@ -132,7 +132,7 @@ setup_compose() {
     if compose_has_data; then
         echo "✅ Existing data found. Skipping seed."
         echo "🔍 Verifying created tables:"
-        docker-compose exec -T pgdatabase psql -U root -d invoices_db -c "\dt" 2>&1
+        docker compose exec -T pgdatabase psql -U root -d invoices_db -c "\dt" 2>&1
         return 0
     fi
 
@@ -144,7 +144,7 @@ setup_compose() {
 
     echo "✅ Schema applied and seed data loaded!"
     echo "🔍 Verifying created tables:"
-    docker-compose exec -T pgdatabase psql -U root -d invoices_db -c "\dt" 2>&1
+    docker compose exec -T pgdatabase psql -U root -d invoices_db -c "\dt" 2>&1
     return 0
 }
 
@@ -202,11 +202,11 @@ setup_local() {
     return 0
 }
 
-if command -v docker-compose >/dev/null 2>&1; then
+if command -v docker compose >/dev/null 2>&1; then
     if docker ps --format "{{.Names}}" | grep -q "invoicedoc-db-dev"; then
         setup_docker "invoicedoc-db-dev" && exit 0
         echo "⚠️  Docker exec failed, trying alternative method..."
-    elif docker-compose ps pgdatabase 2>/dev/null | grep -q "Up"; then
+    elif docker compose ps pgdatabase 2>/dev/null | grep -q "Up"; then
         setup_compose && exit 0
         echo "⚠️  Docker exec failed, trying alternative method..."
     else
@@ -228,7 +228,7 @@ echo "❌ Unable to connect to database"
 echo ""
 echo "Please check:"
 echo "1. Is Docker Desktop running?"
-echo "2. Run this command first: cd database && docker-compose up -d"
+echo "2. Run this command first: cd database && docker compose up -d"
 echo "3. To apply schema manually:"
 echo "   PGPASSWORD=root psql -h localhost -p 15432 -U root -d invoices_db -f $SCHEMA_FILE"
 echo "4. To seed an empty database manually:"

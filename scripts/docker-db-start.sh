@@ -24,11 +24,11 @@ if lsof -Pi :15432 -sTCP:LISTEN -t >/dev/null 2>&1; then
 fi
 
 echo "📦 Starting database container..."
-docker-compose -f "$COMPOSE_DB" up -d "$SVC"
+docker compose -f "$COMPOSE_DB" up -d "$SVC"
 echo "⏳ Waiting for database..."
 sleep 5
 for i in {1..30}; do
-    if docker-compose -f "$COMPOSE_DB" exec -T "$SVC" pg_isready -U root > /dev/null 2>&1; then
+    if docker compose -f "$COMPOSE_DB" exec -T "$SVC" pg_isready -U root > /dev/null 2>&1; then
         echo "✅ Database is ready!"
         break
     fi

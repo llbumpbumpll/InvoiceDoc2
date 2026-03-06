@@ -8,7 +8,7 @@ const composeDb = path.join(root, "database", "compose.yaml");
 const svc = "pgdatabase";
 
 function runComposeQuiet(args, opts = {}) {
-  const r = spawnSafe("docker-compose", ["-f", composeDb, ...args], { cwd: root, encoding: "utf8", stdio: ["pipe", "pipe", "pipe"], ...opts });
+  const r = spawnSafe("docker", ["compose", "-f", composeDb, ...args], { cwd: root, encoding: "utf8", stdio: ["pipe", "pipe", "pipe"], ...opts });
   return r.status === 0 && r.stdout ? r.stdout.toString() : null;
 }
 
