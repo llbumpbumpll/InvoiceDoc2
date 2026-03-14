@@ -259,6 +259,9 @@ INSERT INTO invoice_line_item (id, created_at, invoice_id, product_id, quantity,
 INSERT INTO invoice_line_item (id, created_at, invoice_id, product_id, quantity, unit_price, extended_price) VALUES (151, '2026-02-02 10:36:00+00:00', 52, 9, 20.0, 250.25, 5005.00) ON CONFLICT DO NOTHING;
 INSERT INTO invoice_line_item (id, created_at, invoice_id, product_id, quantity, unit_price, extended_price) VALUES (152, '2026-02-02 10:37:00+00:00', 52, 20, 7.0, 30.75, 215.25) ON CONFLICT DO NOTHING;
 
+INSERT INTO payment (id, created_at, invoice_id, amount) VALUES (26, '2026-02-02 11:00:00+00:00', 20, 3158.75) ON CONFLICT DO NOTHING;
+INSERT INTO payment (id, created_at, invoice_id, amount) VALUES (27, '2026-02-02 11:01:00+00:00', 21, 4613.25) ON CONFLICT DO NOTHING;
+
 -- update sequences to max id (crutial when inserting explicit IDs)
 SELECT setval(pg_get_serial_sequence('country', 'id'), coalesce(max(id),0) + 1, false) FROM country;
 SELECT setval(pg_get_serial_sequence('units', 'id'), coalesce(max(id),0) + 1, false) FROM units;
