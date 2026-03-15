@@ -1,6 +1,6 @@
-// Invoice API handlers: list, get, create, update, delete. Validation via Zod; errors returned as JSON.
+// Invoice API handlers: list, get, create, update, delete.
 import * as invoicesService from "../services/invoices.service.js";
-import { CreateInvoiceSchema } from "../models/invoice.model.js";
+// import { CreateInvoiceSchema } from "../models/invoice.model.js";
 import { sendList, sendOne, sendCreated, sendOk, sendError } from "../utils/response.js";
 import logger from "../utils/logger.js";
 
@@ -27,11 +27,10 @@ export async function getInvoice(req, res) {
 }
 
 export async function createInvoice(req, res) {
-  // Zod validates body (customer_id, invoice_date, line_items...) before saving
-  const parsed = CreateInvoiceSchema.safeParse(req.body);
-  if (!parsed.success) return sendError(res, "Validation failed", 400, "VALIDATION_ERROR", parsed.error.flatten());
+  // const parsed = CreateInvoiceSchema.safeParse(req.body);
+  // if (!parsed.success) return sendError(res, "Validation failed", 400, "VALIDATION_ERROR", parsed.error.flatten());
   try {
-    const result = await invoicesService.createInvoice(parsed.data);
+    const result = await invoicesService.createInvoice(req.body);
     sendCreated(res, result);
   } catch (err) {
     logger.error("createInvoice failed", { error: err?.message ?? String(err) });
@@ -52,11 +51,11 @@ export async function deleteInvoice(req, res) {
 }
 
 export async function updateInvoice(req, res) {
-  const parsed = CreateInvoiceSchema.safeParse(req.body);
-  if (!parsed.success) return sendError(res, "Validation failed", 400, "VALIDATION_ERROR", parsed.error.flatten());
+  // const parsed = CreateInvoiceSchema.safeParse(req.body);
+  // if (!parsed.success) return sendError(res, "Validation failed", 400, "VALIDATION_ERROR", parsed.error.flatten());
   try {
     const invoiceNo = decodeURIComponent(req.params.invoiceNo || "");
-    const result = await invoicesService.updateInvoice(invoiceNo, parsed.data);
+    const result = await invoicesService.updateInvoice(invoiceNo, req.body);
     if (!result) return sendError(res, "Invoice not found", 404);
     sendOk(res, result);
   } catch (err) {
