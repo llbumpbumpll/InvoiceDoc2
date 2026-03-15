@@ -1,5 +1,5 @@
 import * as customersService from "../services/customers.service.js";
-import { CreateCustomerBodySchema, UpdateCustomerBodySchema } from "../models/customer.model.js";
+// import { CreateCustomerBodySchema, UpdateCustomerBodySchema } from "../models/customer.model.js";
 import { sendList, sendData, sendOne, sendCreated, sendOk, sendError } from "../utils/response.js";
 import logger from "../utils/logger.js";
 
@@ -14,10 +14,10 @@ export async function listCustomers(req, res) {
 }
 
 export async function createCustomer(req, res) {
-  const parsed = CreateCustomerBodySchema.safeParse(req.body);
-  if (!parsed.success) return sendError(res, "Validation failed", 400, "VALIDATION_ERROR", parsed.error.flatten());
+  // const parsed = CreateCustomerBodySchema.safeParse(req.body);
+  // if (!parsed.success) return sendError(res, "Validation failed", 400, "VALIDATION_ERROR", parsed.error.flatten());
   try {
-    const result = await customersService.createCustomer(parsed.data);
+    const result = await customersService.createCustomer(req.body);
     sendCreated(res, result);
   } catch (err) {
     logger.error("createCustomer failed", { error: err?.message ?? String(err) });
@@ -26,20 +26,20 @@ export async function createCustomer(req, res) {
 }
 
 export async function updateCustomer(req, res) {
-  const parsed = UpdateCustomerBodySchema.safeParse(req.body);
-  if (!parsed.success) return sendError(res, "Validation failed", 400, "VALIDATION_ERROR", parsed.error.flatten());
+  // const parsed = UpdateCustomerBodySchema.safeParse(req.body);
+  // if (!parsed.success) return sendError(res, "Validation failed", 400, "VALIDATION_ERROR", parsed.error.flatten());
   try {
     const code = decodeURIComponent(req.params.code || "");
     const existing = await customersService.getCustomerByCode(code);
     if (!existing) return sendError(res, "Customer not found", 404);
     // Merge so partial body does not overwrite other fields with undefined → NULL in DB
     const body = {
-      code: parsed.data.code !== undefined ? parsed.data.code : existing.code,
-      name: parsed.data.name !== undefined ? parsed.data.name : existing.name,
-      address_line1: parsed.data.address_line1 !== undefined ? parsed.data.address_line1 : existing.address_line1,
-      address_line2: parsed.data.address_line2 !== undefined ? parsed.data.address_line2 : existing.address_line2,
-      country_id: parsed.data.country_id !== undefined ? parsed.data.country_id : existing.country_id,
-      credit_limit: parsed.data.credit_limit !== undefined ? parsed.data.credit_limit : existing.credit_limit,
+      code: req.body.code !== undefined ? req.body.code : existing.code,
+      name: req.body.name !== undefined ? req.body.name : existing.name,
+      address_line1: req.body.address_line1 !== undefined ? req.body.address_line1 : existing.address_line1,
+      address_line2: req.body.address_line2 !== undefined ? req.body.address_line2 : existing.address_line2,
+      country_id: req.body.country_id !== undefined ? req.body.country_id : existing.country_id,
+      credit_limit: req.body.credit_limit !== undefined ? req.body.credit_limit : existing.credit_limit,
     };
     const result = await customersService.updateCustomerByCode(code, body);
     sendOk(res, result);
