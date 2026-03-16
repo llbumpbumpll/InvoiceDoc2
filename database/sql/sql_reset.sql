@@ -13,7 +13,6 @@
 -- ==========================================
 
 drop table if exists invoice_line_item;
-drop table if exists payment;
 drop table if exists invoice;
 drop table if exists sales_person;
 drop table if exists product;
