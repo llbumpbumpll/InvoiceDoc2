@@ -70,6 +70,13 @@ SELECT setval(pg_get_serial_sequence('____________', 'id'), coalesce(max(id), 0)
 docker exec -i pgdatabase psql -U root -d invoices_db < database/sql/002_lab8_sales_person.sql
 ```
 
+> **ถ้าเจอ `No such container: pgdatabase`** แสดงว่า container เดิมยังใช้ชื่อเก่าอยู่ ให้ restart:
+> ```bash
+> npm run docker:db:stop
+> npm run docker:db:start
+> ```
+> แล้วรันคำสั่ง migration อีกครั้ง
+
 เปิด [http://localhost:8080](http://localhost:8080) (Adminer) → ดูว่ามี table `sales_person` 10 แถว และ `invoice` มี column `sales_person_id`
 
 > **ถ้าต้องการ reset ทั้งหมด** (ข้อมูลหายหมด): `npm run db:reset` แล้วรัน migration ด้านบนใหม่อีกครั้ง
