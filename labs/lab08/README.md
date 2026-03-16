@@ -82,9 +82,7 @@ INSERT INTO country ...
 
 ### ไฟล์ที่ 3: `database/sql/sql_run.sql`
 
-**ไฟล์:** `database/sql/sql_run.sql`
-
-### 1.1 เพิ่ม DROP TABLE
+### 1.3 เพิ่ม DROP TABLE
 
 **Before:**
 ```sql
@@ -105,7 +103,7 @@ drop table if exists product;
 
 ---
 
-### 1.2 เพิ่ม CREATE TABLE
+### 1.4 เพิ่ม CREATE TABLE
 
 **Before:**
 ```sql
@@ -140,7 +138,7 @@ create table invoice (
 
 ---
 
-### 1.3 เพิ่ม Seed Data (อย่างน้อย 10 แถว)
+### 1.5 เพิ่ม Seed Data (อย่างน้อย 10 แถว)
 
 **Before:**
 ```sql
@@ -161,7 +159,7 @@ INSERT INTO country ...
 
 ---
 
-### 1.4 เพิ่ม setval sequence
+### 1.6 เพิ่ม setval sequence
 
 **Before:**
 ```sql
