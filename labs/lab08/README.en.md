@@ -542,18 +542,24 @@ const payload = {
   <div style={{ display: "flex", gap: 8 }}>
     <input
       className="form-control"
-      value={____________}
-      onChange={(e) => { set____________(e.target.value); set____________(""); }}
+      value={____________}        {/* salesPersonCode */}
+      onChange={(e) => {
+        set____________(e.target.value);   {/* setSalesPersonCode */}
+        set____________("");               {/* setSalesPersonName — clear name when code changes */}
+      }}
       placeholder="e.g. SP001"
       style={{ flex: 1 }}
     />
     <button type="button" className="btn btn-primary"
-      onClick={() => set____________(true)}>
+      onClick={() => set____________(true)}>  {/* setSalesPersonModalOpen */}
       LoV
     </button>
-    {____________ && (
+    {____________ && (    {/* salesPersonCode — show clear button only when there's a value */}
       <button type="button"
-        onClick={() => { set____________(""); set____________(""); }}>
+        onClick={() => {
+          set____________("");   {/* setSalesPersonCode */}
+          set____________("");   {/* setSalesPersonName */}
+        }}>
         ×
       </button>
     )}
@@ -563,15 +569,16 @@ const payload = {
 <div className="form-group">
   <label className="form-label">Sales Person Name</label>
   <input className="form-control" disabled value={____________} placeholder="—" />
+  {/*                                               ^ salesPersonName */}
 </div>
 
-<____________
-  isOpen={____________}
-  onClose={() => set____________(false)}
+<____________  {/* SalesPersonPickerModal */}
+  isOpen={____________}           {/* salesPersonModalOpen */}
+  onClose={() => set____________(false)}   {/* setSalesPersonModalOpen */}
   onSelect={(code, name) => {
-    set____________(code);
-    set____________(name);
-    set____________(false);
+    set____________(code);    {/* setSalesPersonCode */}
+    set____________(name);    {/* setSalesPersonName */}
+    set____________(false);   {/* setSalesPersonModalOpen */}
   }}
 />
 ```
