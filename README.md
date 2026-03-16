@@ -98,46 +98,79 @@ See [README.DOCKER.md](./README.DOCKER.md) for deployment details.
 InvoiceDoc2/
 ├── client/                      # React frontend (Vite)
 │   ├── src/
-│   │   ├── api/                 # API client (http.js, customers.api.js, products.api.js, invoices.api.js, salesPersons.api.js)
-│   │   ├── components/          # Reusable UI (DataList, InvoiceForm, LineItemsEditor, Modal, CustomerPickerModal, SalesPersonPickerModal, Loading)
-│   │   ├── pages/               # Page views
-│   │   │   ├── invoices/        # InvoiceList, InvoicePage (view/create/edit)
-│   │   │   ├── customers/       # CustomerList, CustomerPage
-│   │   │   ├── products/        # ProductList, ProductPage
-│   │   │   └── reports/         # Reports.jsx, filters/ (ReportFilters, DateRangeFilter, ProductFilter, etc.)
+│   │   ├── api/                 # API clients
+│   │   │   ├── http.js          # Base fetch wrapper
+│   │   │   ├── customers.api.js
+│   │   │   ├── products.api.js
+│   │   │   ├── invoices.api.js
+│   │   │   ├── reports.api.js
+│   │   │   └── salesPersons.api.js
+│   │   ├── components/          # Reusable UI components
+│   │   │   ├── DataList.jsx     # Generic paginated table with search
+│   │   │   ├── InvoiceForm.jsx  # Create/edit invoice form
+│   │   │   ├── LineItemsEditor.jsx
+│   │   │   ├── LineItemRow.jsx
+│   │   │   ├── ListPickerModal.jsx   # Generic LoV modal base
+│   │   │   ├── CustomerPickerModal.jsx
+│   │   │   ├── ProductPickerModal.jsx
+│   │   │   ├── SalesPersonPickerModal.jsx
+│   │   │   ├── Modal.jsx        # AlertModal, ConfirmModal
+│   │   │   ├── ReportTable.jsx
+│   │   │   ├── SearchableSelect.jsx
+│   │   │   └── Loading.jsx
+│   │   ├── pages/
+│   │   │   ├── invoices/        # InvoiceList.jsx, InvoicePage.jsx
+│   │   │   ├── customers/       # CustomerList.jsx, CustomerPage.jsx
+│   │   │   ├── products/        # ProductList.jsx, ProductPage.jsx
+│   │   │   └── reports/         # Reports.jsx, filters/ (ReportFilters, DateRangeFilter, ProductFilter, CustomerFilter, YearMonthFilter, PaginationFilter)
+│   │   ├── schemas/             # Zod schemas (customer.schema.js, product.schema.js)
 │   │   ├── main.jsx             # App entry, routes, layout
 │   │   ├── index.css            # Global styles
 │   │   └── utils.js             # formatBaht, formatDate
+│   ├── index.html
+│   ├── vite.config.js
 │   ├── Dockerfile
 │   └── package.json
 ├── server/                      # Express backend
 │   ├── src/
-│   │   ├── controllers/         # Request handlers (invoices, customers, products, reports, salesPersons)
-│   │   ├── routes/              # API route definitions
-│   │   ├── services/            # Business logic & DB queries (invoices, customers, products, reports, salesPersons)
-│   │   ├── models/              # Zod validation schemas (invoice, customer, product)
-│   │   ├── db/                  # PostgreSQL pool (pool.js)
-│   │   ├── utils/               # Response helpers (response.js)
-│   │   └── app.js               # Express app entry
+│   │   ├── controllers/         # customers, products, invoices, reports, salesPersons
+│   │   ├── routes/              # customers, products, invoices, reports, salesPersons
+│   │   ├── services/            # customers, products, invoices, reports, salesPersons
+│   │   ├── models/              # Zod schemas: customer.model.js, product.model.js, invoice.model.js
+│   │   ├── db/pool.js           # PostgreSQL connection pool
+│   │   ├── utils/               # logger.js, response.js
+│   │   └── app.js               # Express entry, middleware, route mounting
 │   ├── Dockerfile
 │   └── package.json
-├── database/                    # PostgreSQL setup
-│   ├── init/                    # 01_schema.sql (schema only, run on first Docker start)
+├── database/
+│   ├── init/01_schema.sql       # Auto-run on first Docker start (Lab 7 baseline)
 │   ├── sql/
-│   │   ├── 001_schema.sql       # Lab 7 baseline schema (safe to rerun)
-│   │   ├── 002_lab8_sales_person.sql  # Lab 8 migration (sales_person table + invoice FK)
-│   │   ├── 003_seed.sql         # Seed data
-│   │   ├── sql_run.sql          # Safe deploy (001 + 003, no DROP)
-│   │   └── sql_reset.sql        # Full reset (DROP all + recreate + seed) ⚠️ data loss
-│   ├── compose.yaml             # Database-only Docker Compose (container: pgdatabase)
-│   └── setup_db.js              # Run schema + seed if empty; --reset flag for full reset
-├── docker-compose.yml           # Full stack (database + server + client, container: pgdatabase)
-├── docker-compose.coolify.yml   # Server + client only (DB via env)
-├── scripts/                     # Helper Node.js scripts (run from repo root)
-│   ├── docker-db-start.js       # Start DB only + setup_db
-│   ├── docker-db-stop.js        # Stop DB only
-│   ├── docker-db-check.js       # Check DB status & counts
+│   │   ├── 001_schema.sql       # Lab 7 baseline schema (safe to rerun, IF NOT EXISTS)
+│   │   ├── 002_lab8_sales_person.sql  # Lab 8 migration — run once to upgrade
+│   │   ├── 003_seed.sql         # Seed data (ON CONFLICT DO NOTHING)
+│   │   ├── sql_run.sql          # Safe deploy: runs 001 + 003, no DROP
+│   │   └── sql_reset.sql        # Full reset: DROP all + recreate ⚠️ data loss
+│   ├── DB_schema.png            # Entity-relationship diagram
+│   ├── compose.yaml             # DB-only Docker Compose (container: pgdatabase + adminer)
+│   └── setup_db.js              # Applies schema + seeds if empty; --reset for full reset
+├── docs/
+│   └── DEPLOYMENT.md            # Deployment guide (incremental migration workflow)
+├── labs/
+│   └── lab08/
+│       ├── README.md            # Lab 8 instructions (Thai)
+│       └── README.en.md         # Lab 8 instructions (English)
+├── scripts/                     # Root-level Node.js helper scripts
+│   ├── docker-db-start.js       # Start DB + adminer + run setup_db.js
+│   ├── docker-db-stop.js        # Stop DB
+│   ├── docker-db-check.js       # Check DB status & row counts
+│   ├── check-and-pull.js        # Sync with upstream (npm run sync)
 │   └── run-safe.js              # Shared spawn/exec helpers
+├── .github/workflows/build.yml  # CI workflow
+├── .cursor/rules/               # Cursor AI rules
+├── docker-compose.yml           # Full stack: database + server + client (container: pgdatabase)
+├── docker-compose.coolify.yml   # Server + client only (DB provided via env)
+├── package.json                 # Root scripts: docker:db:start/stop/check, db:reset, sync
+├── AGENTS.md                    # Instructions for AI assistants
 ├── README.DOCKER.md             # Docker deployment guide
 ├── GUIDE.md                     # Project guide (Thai/English)
 └── PROJECT_STRUCTURE.md         # Detailed structure notes
