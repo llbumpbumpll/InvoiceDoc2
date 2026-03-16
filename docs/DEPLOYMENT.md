@@ -29,12 +29,25 @@ Supabase provides managed PostgreSQL with an easy dashboard, suitable for small 
 
 ### 1.2 Run SQL (schema + seed)
 
+#### For a brand-new Supabase project (fresh install)
+
 1. In the project, open **SQL Editor** in the left menu.
 2. Click **New query**.
-3. Open `database/sql/sql_run.sql` in this repo and **copy the entire file** into the SQL Editor.
-4. Click **Run** (or Ctrl/Cmd + Enter).
-5. Confirm success (e.g. “Success. No rows returned”) and no red errors.  
-   The script drops existing tables (if any), then creates tables and inserts sample data (customers, products, invoices, etc.).
+3. Open `database/sql/001_schema.sql` in this repo and **copy the entire file** into the SQL Editor.
+4. Click **Run** (or Ctrl/Cmd + Enter). Confirm no red errors.
+5. Open a **second new query**, copy `database/sql/003_seed.sql`, and run it.
+
+> **Why two files?** `001_schema.sql` creates tables (safe to rerun — uses `IF NOT EXISTS`). `003_seed.sql` inserts reference data (safe to rerun — uses `ON CONFLICT DO NOTHING`). Keeping them separate lets you rerun seed data without touching the schema.
+
+#### For upgrading an existing database (e.g. moving from Lab 7 to Lab 8)
+
+Run only the relevant migration script — do **not** drop and recreate tables:
+
+1. Open **SQL Editor** → **New query**.
+2. Copy `database/sql/002_lab8_sales_person.sql` and run it.
+3. Confirm no red errors. Existing invoice data is preserved.
+
+> **Note:** `database/sql/sql_reset.sql` drops all tables and recreates everything from scratch. Use it **only** for a deliberate full reset (all data will be lost).
 
 ### 1.3 Get the connection string (DATABASE_URL)
 
