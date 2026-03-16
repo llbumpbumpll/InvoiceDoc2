@@ -98,13 +98,13 @@ See [README.DOCKER.md](./README.DOCKER.md) for deployment details.
 InvoiceDoc2/
 ├── client/                      # React frontend (Vite)
 │   ├── src/
-│   │   ├── api/                 # API client (http.js, customers.api.js, products.api.js, invoices.api.js)
-│   │   ├── components/          # Reusable UI (DataList, InvoiceForm, LineItemsEditor, Modal, ReportTable, SearchableSelect, Loading)
+│   │   ├── api/                 # API client (http.js, customers.api.js, products.api.js, invoices.api.js, salesPersons.api.js)
+│   │   ├── components/          # Reusable UI (DataList, InvoiceForm, LineItemsEditor, Modal, CustomerPickerModal, SalesPersonPickerModal, Loading)
 │   │   ├── pages/               # Page views
 │   │   │   ├── invoices/        # InvoiceList, InvoicePage (view/create/edit)
 │   │   │   ├── customers/       # CustomerList, CustomerPage
 │   │   │   ├── products/        # ProductList, ProductPage
-│   │   │   └── reports/        # Reports.jsx, filters/ (ReportFilters, DateRangeFilter, ProductFilter, etc.)
+│   │   │   └── reports/         # Reports.jsx, filters/ (ReportFilters, DateRangeFilter, ProductFilter, etc.)
 │   │   ├── main.jsx             # App entry, routes, layout
 │   │   ├── index.css            # Global styles
 │   │   └── utils.js             # formatBaht, formatDate
@@ -112,9 +112,9 @@ InvoiceDoc2/
 │   └── package.json
 ├── server/                      # Express backend
 │   ├── src/
-│   │   ├── controllers/         # Request handlers (invoices, customers, products, reports)
+│   │   ├── controllers/         # Request handlers (invoices, customers, products, reports, salesPersons)
 │   │   ├── routes/              # API route definitions
-│   │   ├── services/            # Business logic & DB queries (invoices, customers, products, reports)
+│   │   ├── services/            # Business logic & DB queries (invoices, customers, products, reports, salesPersons)
 │   │   ├── models/              # Zod validation schemas (invoice, customer, product)
 │   │   ├── db/                  # PostgreSQL pool (pool.js)
 │   │   ├── utils/               # Response helpers (response.js)
@@ -122,19 +122,22 @@ InvoiceDoc2/
 │   ├── Dockerfile
 │   └── package.json
 ├── database/                    # PostgreSQL setup
-│   ├── init/                    # 01_schema.sql (schema only, run on first start)
-│   ├── sql/                     # 001_schema.sql, 003_seed.sql, sql_run.sql (full reset)
-│   ├── compose.yaml             # Database-only Docker Compose
-│   └── setup_db.js              # Run schema, then seed only if DB is empty
-├── docker-compose.yml           # Full stack (database + server + client)
+│   ├── init/                    # 01_schema.sql (schema only, run on first Docker start)
+│   ├── sql/
+│   │   ├── 001_schema.sql       # Lab 7 baseline schema (safe to rerun)
+│   │   ├── 002_lab8_sales_person.sql  # Lab 8 migration (sales_person table + invoice FK)
+│   │   ├── 003_seed.sql         # Seed data
+│   │   ├── sql_run.sql          # Safe deploy (001 + 003, no DROP)
+│   │   └── sql_reset.sql        # Full reset (DROP all + recreate + seed) ⚠️ data loss
+│   ├── compose.yaml             # Database-only Docker Compose (container: pgdatabase)
+│   └── setup_db.js              # Run schema + seed if empty; --reset flag for full reset
+├── docker-compose.yml           # Full stack (database + server + client, container: pgdatabase)
 ├── docker-compose.coolify.yml   # Server + client only (DB via env)
 ├── scripts/                     # Helper Node.js scripts (run from repo root)
-│   ├── docker-start.js          # Start full stack
-│   ├── docker-stop.js           # Stop full stack
-│   ├── docker-logs.js           # View logs
 │   ├── docker-db-start.js       # Start DB only + setup_db
 │   ├── docker-db-stop.js        # Stop DB only
-│   └── docker-db-check.js       # Check DB status & counts
+│   ├── docker-db-check.js       # Check DB status & counts
+│   └── run-safe.js              # Shared spawn/exec helpers
 ├── README.DOCKER.md             # Docker deployment guide
 ├── GUIDE.md                     # Project guide (Thai/English)
 └── PROJECT_STRUCTURE.md         # Detailed structure notes
@@ -193,6 +196,9 @@ InvoiceDoc2/
 - `PUT /api/invoices/:id` - Update invoice
 - `DELETE /api/invoices/:id` - Delete invoice
 
+### Sales Persons
+- `GET /api/sales-persons` - List sales persons (supports `search`, `page`, `limit`)
+
 ### Reports
 - `GET /api/reports/sales-by-product` - Sales by product (supports filters, pagination, sorting)
 - `GET /api/reports/sales-by-customer` - Sales by customer (supports filters, pagination, sorting)
@@ -222,8 +228,7 @@ InvoiceDoc2/
 | `npm run docker:db:start` | Start database only + apply schema, then seed if empty *(run this first)* |
 | `npm run docker:db:stop` | Stop database |
 | `npm run docker:db:check` | Check DB status and table row counts |
-| `npm run docker:db:logs` | View database container logs |
-| `npm run docker:db:ps` | Show database container status |
+| `npm run db:reset` | Full reset (DROP all tables + recreate + seed) ⚠️ data loss |
 
 **Repo sync (pull latest from upstream):**
 | Command | Description |
@@ -264,7 +269,8 @@ Scripts live in `scripts/`. DB commands use `database/compose.yaml`.
 - `units` - Unit of measurement
 - `customer` - Customer information
 - `product` - Product catalog
-- `invoice` - Invoice headers
+- `sales_person` - Sales person master data
+- `invoice` - Invoice headers (includes `sales_person_id` FK)
 - `invoice_line_item` - Invoice line items
 
 ## 🐛 Troubleshooting
@@ -275,7 +281,7 @@ If you see `relation "invoice" does not exist`:
 2. Or manually: `cd database && docker compose up -d && node setup_db.js`
 3. Or run schema directly: `cd database && PGPASSWORD=root psql -h localhost -p 15432 -U root -d invoices_db -f sql/001_schema.sql`
 4. If the DB is empty, run seed directly: `cd database && PGPASSWORD=root psql -h localhost -p 15432 -U root -d invoices_db -f sql/003_seed.sql`
-5. To reset from scratch: `cd database && PGPASSWORD=root psql -h localhost -p 15432 -U root -d invoices_db -f sql/sql_run.sql`
+5. To reset from scratch: `npm run db:reset`
 
 ### Port Already in Use
 - Change `PORT` in `server/.env` for backend

@@ -15,6 +15,7 @@ services:
   pgdatabase:
   # https://hub.docker.com/_/postgres
     # Official Postgres image from DockerHub (we use the last version)
+    container_name: pgdatabase
     image: "postgres:17-alpine3.22"
     # Force amd64 image so it runs on Windows (Docker Desktop) and avoids exec format error
     platform: linux/amd64

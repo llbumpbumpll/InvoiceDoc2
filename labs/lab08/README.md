@@ -67,12 +67,12 @@ SELECT setval(pg_get_serial_sequence('____________', 'id'), coalesce(max(id), 0)
 ### รันและตรวจสอบ
 
 ```bash
-psql $DATABASE_URL -f database/sql/002_lab8_sales_person.sql
+docker exec -i pgdatabase psql -U root -d invoices_db < database/sql/002_lab8_sales_person.sql
 ```
 
 เปิด [http://localhost:8080](http://localhost:8080) (Adminer) → ดูว่ามี table `sales_person` 10 แถว และ `invoice` มี column `sales_person_id`
 
-> **ถ้าต้องการ reset ทั้งหมด** (ข้อมูลหายหมด): รัน `sql_reset.sql` แล้วตามด้วย `sql_run.sql`
+> **ถ้าต้องการ reset ทั้งหมด** (ข้อมูลหายหมด): `npm run db:reset` แล้วรัน migration ด้านบนใหม่อีกครั้ง
 
 ---
 

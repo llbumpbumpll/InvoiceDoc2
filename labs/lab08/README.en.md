@@ -67,12 +67,12 @@ SELECT setval(pg_get_serial_sequence('____________', 'id'), coalesce(max(id), 0)
 ### Run and verify
 
 ```bash
-psql $DATABASE_URL -f database/sql/002_lab8_sales_person.sql
+docker exec -i pgdatabase psql -U root -d invoices_db < database/sql/002_lab8_sales_person.sql
 ```
 
 Open [http://localhost:8080](http://localhost:8080) (Adminer) → confirm table `sales_person` has 10 rows and `invoice` has a `sales_person_id` column.
 
-> **If you need a full reset** (all data lost): run `sql_reset.sql` then `sql_run.sql`.
+> **If you need a full reset** (all data lost): `npm run db:reset` then rerun the migration above.
 
 ---
 
