@@ -310,7 +310,69 @@ export async function createInvoice({ invoice_no, customer_code, ____________, i
 }
 ```
 
-> Do the same in `updateInvoice`
+---
+
+### 3.4 updateInvoice — do the same thing
+
+**File:** `server/src/services/invoices.service.js`
+
+**Before:**
+```js
+export async function updateInvoice(
+  idOrInvoiceNo,
+  { invoice_no, customer_code, invoice_date, vat_rate, line_items },
+) {
+  ...
+  const customer_id = cust.rows[0].id;
+
+  const client = await pool.connect();
+  try {
+    await client.query("begin");
+
+    // no sales_person_id yet
+
+    ...
+    await client.query(
+      `UPDATE invoice
+       SET invoice_no=$1, invoice_date=$2, customer_id=$3, total_amount=$4, vat=$5, amount_due=$6
+       WHERE id=$7`,
+      [resolvedInvoiceNo, invoice_date, customer_id, total, vat, amount_due, id],
+    );
+  }
+}
+```
+
+**After:**
+```js
+export async function updateInvoice(
+  idOrInvoiceNo,
+  { invoice_no, customer_code, ____________, invoice_date, vat_rate, line_items },
+) {
+  ...
+  const customer_id = cust.rows[0].id;
+
+  const client = await pool.connect();
+  try {
+    await client.query("begin");
+
+    // resolve sales_person_code → id (if provided)
+    let ____________ = null;
+    if (____________) {
+      const sp = await client.query("SELECT id FROM sales_person WHERE code = $1", [____________]);
+      if (sp.rowCount === 0) throw new Error(`Sales person not found: ${____________}`);
+      ____________ = sp.rows[0].id;
+    }
+
+    ...
+    await client.query(
+      `UPDATE invoice
+       SET invoice_no=$1, invoice_date=$2, customer_id=$3, ____________=$4, total_amount=$5, vat=$6, amount_due=$7
+       WHERE id=$8`,
+      [resolvedInvoiceNo, invoice_date, customer_id, ____________, total, vat, amount_due, id],
+    );
+  }
+}
+```
 
 ### Test
 
