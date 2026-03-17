@@ -491,24 +491,30 @@ const [____________, set____________] = React.useState(false); // modal open/clo
 
 ### 6.3 โหลดค่าตอน edit mode
 
+โค้ดส่วนนี้อยู่ใน `React.useEffect` ที่ดู `initialData` เป็น dependency
+
 **Before:**
 ```js
-if (initialData) {
-  setInvoiceNo(initialData.invoice_no);
-  setCustomerCode(initialData.customer_code || "");
-  ...
-}
+React.useEffect(() => {
+  if (initialData) {
+    setInvoiceNo(initialData.invoice_no);
+    setCustomerCode(initialData.customer_code || "");
+    ...
+  }
+}, [initialData]);
 ```
 
 **After:**
 ```js
-if (initialData) {
-  setInvoiceNo(initialData.invoice_no);
-  setCustomerCode(initialData.customer_code || "");
-  set____________(initialData.____________ || "");   // sales_person_code
-  set____________(initialData.____________ || "");   // sales_person_name
-  ...
-}
+React.useEffect(() => {
+  if (initialData) {
+    setInvoiceNo(initialData.invoice_no);
+    setCustomerCode(initialData.customer_code || "");
+    set____________(initialData.____________ || "");   // sales_person_code
+    set____________(initialData.____________ || "");   // sales_person_name
+    ...
+  }
+}, [initialData]);
 ```
 
 ---
