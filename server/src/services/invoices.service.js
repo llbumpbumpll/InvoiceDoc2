@@ -10,7 +10,7 @@ export async function listInvoices({
 } = {}) {
   const offset = (Number(page) - 1) * Number(limit);
 
-  const allowedSort = ["invoice_no", "customer_name", "invoice_date", "amount_due"];
+  const allowedSort = ["invoice_no", "customer_name", "sales_person_name", "invoice_date", "amount_due"];
   const sortColumn = allowedSort.includes(sortBy) ? sortBy : "invoice_date";
   const sortDirection = sortDir === "asc" ? "ASC" : "DESC";
 
@@ -21,6 +21,7 @@ export async function listInvoices({
       SELECT COUNT(*) as total
       FROM invoice i
       JOIN customer c ON c.id = i.customer_id
+      LEFT JOIN sales_person sp ON sp.id = i.sales_person_id
       WHERE i.invoice_no ILIKE $1 OR c.name ILIKE $1
     `,
     [searchParam],
@@ -30,9 +31,11 @@ export async function listInvoices({
   const { rows } = await pool.query(
     `
       SELECT i.invoice_no, i.invoice_date, i.amount_due,
-             c.name as customer_name
+             c.name as customer_name,
+             sp.name as sales_person_name
       FROM invoice i
       JOIN customer c ON c.id = i.customer_id
+      LEFT JOIN sales_person sp ON sp.id = i.sales_person_id
       WHERE i.invoice_no ILIKE $1 OR c.name ILIKE $1
       ORDER BY ${sortColumn} ${sortDirection} NULLS LAST, i.id DESC
       LIMIT $2 OFFSET $3
@@ -70,10 +73,13 @@ export async function getInvoice(idOrInvoiceNo) {
       select i.invoice_no, i.invoice_date, i.total_amount, i.vat, i.amount_due,
              c.code as customer_code, c.name as customer_name,
              c.address_line1, c.address_line2,
-             co.name as country_name
+             co.name as country_name,
+             sp.code as sales_person_code,
+             sp.name as sales_person_name
       from invoice i
       join customer c on c.id = i.customer_id
       left join country co on co.id = c.country_id
+      left join sales_person sp on sp.id = i.sales_person_id
       where i.id = $1
     `,
     [id],
@@ -118,7 +124,14 @@ async function enrichLineItems(client, line_items) {
   return enriched;
 }
 
-export async function createInvoice({ invoice_no, customer_code, invoice_date, vat_rate, line_items }) {
+export async function createInvoice({
+  invoice_no,
+  customer_code,
+  sales_person_code,
+  invoice_date,
+  vat_rate,
+  line_items,
+}) {
   const client = await pool.connect();
   try {
     await client.query("begin");
@@ -127,6 +140,13 @@ export async function createInvoice({ invoice_no, customer_code, invoice_date, v
     const cust = await client.query("SELECT id, credit_limit FROM customer WHERE code = $1", [code]);
     if (cust.rowCount === 0) throw new Error(`Customer not found: ${code}`);
     const customer_id = cust.rows[0].id;
+    const salesPersonCode = sales_person_code != null ? String(sales_person_code).trim() : "";
+    let sales_person_id = null;
+    if (salesPersonCode) {
+      const sp = await client.query("SELECT id FROM sales_person WHERE code = $1", [salesPersonCode]);
+      if (sp.rowCount === 0) throw new Error(`Sales person not found: ${salesPersonCode}`);
+      sales_person_id = sp.rows[0].id;
+    }
 
     let resolvedInvoiceNo = invoice_no;
     if (!resolvedInvoiceNo || String(resolvedInvoiceNo).trim() === "") {
@@ -150,15 +170,15 @@ export async function createInvoice({ invoice_no, customer_code, invoice_date, v
 
     const inv = await client.query(
       `
-        insert into invoice (id, created_at, invoice_no, invoice_date, customer_id, total_amount, vat, amount_due)
+        insert into invoice (id, created_at, invoice_no, invoice_date, customer_id, sales_person_id, total_amount, vat, amount_due)
         values (
           (select coalesce(max(id),0)+1 from invoice),
           now(),
-          $1,$2,$3,$4,$5,$6
+          $1,$2,$3,$4,$5,$6,$7
         )
         returning id, invoice_no
       `,
-      [resolvedInvoiceNo, invoice_date, customer_id, total, vat, amount_due],
+      [resolvedInvoiceNo, invoice_date, customer_id, sales_person_id, total, vat, amount_due],
     );
 
     const invoice_id = inv.rows[0].id;
@@ -201,7 +221,7 @@ export async function deleteInvoice(idOrInvoiceNo) {
 
 export async function updateInvoice(
   idOrInvoiceNo,
-  { invoice_no, customer_code, invoice_date, vat_rate, line_items },
+  { invoice_no, customer_code, sales_person_code, invoice_date, vat_rate, line_items },
 ) {
   let id = idOrInvoiceNo;
   if (typeof idOrInvoiceNo === "string" && String(idOrInvoiceNo).trim() !== "" && isNaN(Number(idOrInvoiceNo))) {
@@ -219,6 +239,14 @@ export async function updateInvoice(
   const client = await pool.connect();
   try {
     await client.query("begin");
+
+    const salesPersonCode = sales_person_code != null ? String(sales_person_code).trim() : "";
+    let sales_person_id = null;
+    if (salesPersonCode) {
+      const sp = await client.query("SELECT id FROM sales_person WHERE code = $1", [salesPersonCode]);
+      if (sp.rowCount === 0) throw new Error(`Sales person not found: ${salesPersonCode}`);
+      sales_person_id = sp.rows[0].id;
+    }
 
     const enriched = await enrichLineItems(client, line_items);
 
@@ -243,10 +271,10 @@ export async function updateInvoice(
     await client.query(
       `
         UPDATE invoice 
-        SET invoice_no=$1, invoice_date=$2, customer_id=$3, total_amount=$4, vat=$5, amount_due=$6
-        WHERE id=$7
+        SET invoice_no=$1, invoice_date=$2, customer_id=$3, sales_person_id=$4, total_amount=$5, vat=$6, amount_due=$7
+        WHERE id=$8
       `,
-      [resolvedInvoiceNo, invoice_date, customer_id, total, vat, amount_due, id],
+      [resolvedInvoiceNo, invoice_date, customer_id, sales_person_id, total, vat, amount_due, id],
     );
 
     const keptLineIds = line_items.filter((li) => li.id != null && Number(li.id) > 0).map((li) => Number(li.id));
@@ -297,4 +325,3 @@ export async function updateInvoice(
     client.release();
   }
 }
-
