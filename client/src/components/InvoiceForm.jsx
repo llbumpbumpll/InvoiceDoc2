@@ -3,8 +3,10 @@
 import React from "react";
 import LineItemsEditor from "./LineItemsEditor.jsx";
 import CustomerPickerModal from "./CustomerPickerModal.jsx";
+import SalesPersonPickerModal from "./SalesPersonPickerModal.jsx";
 import { AlertModal } from "./Modal.jsx";
 import { getCustomer } from "../api/customers.api.js";
+import { listSalesPersons } from "../api/salesPersons.api.js";
 import { formatBaht } from "../utils.js";
 
 export default function InvoiceForm({ onSubmit, submitting, initialData }) {
@@ -18,6 +20,31 @@ export default function InvoiceForm({ onSubmit, submitting, initialData }) {
   const [customerModalOpen, setCustomerModalOpen] = React.useState(false);
   const [customerDetails, setCustomerDetails] = React.useState(null); // name + address (readonly)
   const [customerLoadError, setCustomerLoadError] = React.useState("");
+  const [salesPersonCode, setSalesPersonCode] = React.useState("");
+  const [salesPersonName, setSalesPersonName] = React.useState("");
+  const [salesPersonModalOpen, setSalesPersonModalOpen] = React.useState(false);
+  const [salesPersonLoadError, setSalesPersonLoadError] = React.useState("");
+
+  async function loadSalesPersonByCode(code) {
+    const trimmedCode = String(code || "").trim();
+    if (!trimmedCode) {
+      setSalesPersonName("");
+      setSalesPersonLoadError("");
+      return;
+    }
+
+    try {
+      // The lab only asks for a list API, so the form resolves a typed code from the list results.
+      const result = await listSalesPersons({ search: trimmedCode, page: 1, limit: 20 });
+      const matched = (result.data || []).find((row) => String(row.code).trim() === trimmedCode);
+      if (!matched) throw new Error("Sales person not found");
+      setSalesPersonName(matched.name || "");
+      setSalesPersonLoadError("");
+    } catch {
+      setSalesPersonName("");
+      setSalesPersonLoadError("Sales person not found");
+    }
+  }
 
   // When customer code is set (from LoV or initialData), fetch name and address
   React.useEffect(() => {
@@ -63,6 +90,8 @@ export default function InvoiceForm({ onSubmit, submitting, initialData }) {
     if (initialData) {
       setInvoiceNo(initialData.invoice_no);
       setCustomerCode(initialData.customer_code || "");
+      setSalesPersonCode(initialData.sales_person_code || "");
+      setSalesPersonName(initialData.sales_person_name || "");
       const d = initialData.invoice_date ? new Date(initialData.invoice_date).toISOString().slice(0, 10) : "";
       setInvoiceDate(d);
       setVatRate(Number(initialData.vat_rate || 0.07));
@@ -78,6 +107,36 @@ export default function InvoiceForm({ onSubmit, submitting, initialData }) {
     }
   }, [initialData]);
 
+  React.useEffect(() => {
+    const code = String(salesPersonCode || "").trim();
+    if (!code) {
+      setSalesPersonName("");
+      setSalesPersonLoadError("");
+      return;
+    }
+
+    let cancelled = false;
+    listSalesPersons({ search: code, page: 1, limit: 20 })
+      .then((result) => {
+        if (cancelled) return;
+        const matched = (result.data || []).find((row) => String(row.code).trim() === code);
+        if (!matched) {
+          setSalesPersonName("");
+          setSalesPersonLoadError("Sales person not found");
+          return;
+        }
+        setSalesPersonName(matched.name || "");
+        setSalesPersonLoadError("");
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setSalesPersonName("");
+          setSalesPersonLoadError("Sales person not found");
+        }
+      });
+    return () => { cancelled = true; };
+  }, [salesPersonCode]);
+
   const subtotal = items.reduce((s, it) => s + Number(it.quantity || 0) * Number(it.unit_price || 0), 0);
   const vat = subtotal * Number(vatRate || 0);
   const amountDue = subtotal + vat;
@@ -86,6 +145,7 @@ export default function InvoiceForm({ onSubmit, submitting, initialData }) {
 
   const hasEmptyProduct = items.some(it => !it.product_code);
   const hasEmptyCustomer = !String(customerCode || "").trim() || !customerDetails;
+  const hasInvalidSalesPerson = !!String(salesPersonCode || "").trim() && !salesPersonName;
 
   const customerAddressDisplay = customerDetails
     ? [customerDetails.address_line1, customerDetails.address_line2, customerDetails.country_name].filter(Boolean).join(", ") || ""
@@ -97,6 +157,7 @@ export default function InvoiceForm({ onSubmit, submitting, initialData }) {
     if (!invoiceDate || String(invoiceDate).trim() === "") errs.push("Date should not be null");
     if (!String(customerCode || "").trim()) errs.push("Customer Code should not be null");
     else if (!customerDetails) errs.push("Customer must be selected from list (enter code and blur, or use LoV)");
+    if (String(salesPersonCode || "").trim() && !salesPersonName) errs.push("Sales person must be selected from list or match an existing code");
     if (!initialData && !autoCode && !String(invoiceNo || "").trim()) errs.push("Invoice No should not be null");
     items.forEach((it, i) => {
       const row = i + 1;
@@ -134,6 +195,7 @@ export default function InvoiceForm({ onSubmit, submitting, initialData }) {
     const payload = {
       invoice_no: initialData ? invoiceNo.trim() : (autoCode ? "" : invoiceNo.trim()),
       customer_code: String(customerCode).trim(),
+      sales_person_code: String(salesPersonCode || "").trim(),
       invoice_date: invoiceDate,
       vat_rate: Number(vatRate),
       line_items: items.map((x) => {
@@ -250,6 +312,70 @@ export default function InvoiceForm({ onSubmit, submitting, initialData }) {
               }}
             />
 
+            <div className="form-group">
+              <label className="form-label">Sales Person Code</label>
+              <div style={{ display: "flex", gap: 8, alignItems: "stretch" }}>
+                <input
+                  className="form-control"
+                  value={salesPersonCode}
+                  onChange={(e) => setSalesPersonCode(e.target.value)}
+                  onBlur={() => loadSalesPersonByCode(salesPersonCode)}
+                  placeholder="e.g. SP001"
+                  style={{ flex: 1 }}
+                />
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={() => setSalesPersonModalOpen(true)}
+                  title="List of Values"
+                >
+                  LoV
+                </button>
+                {salesPersonCode && (
+                  <button
+                    type="button"
+                    onClick={() => { setSalesPersonCode(""); setSalesPersonName(""); setSalesPersonLoadError(""); }}
+                    title="Clear"
+                    style={{
+                      padding: "0 12px",
+                      border: "1px solid var(--border)",
+                      borderRadius: "var(--radius-sm)",
+                      background: "var(--bg-body)",
+                      color: "var(--text-muted)",
+                      cursor: "pointer",
+                      fontSize: "1.2rem",
+                      lineHeight: 1,
+                    }}
+                  >
+                    ×
+                  </button>
+                )}
+              </div>
+              {salesPersonLoadError && (
+                <span style={{ fontSize: "0.8rem", color: "#ef4444", marginTop: 4, display: "block" }}>{salesPersonLoadError}</span>
+              )}
+              {!salesPersonCode && (
+                <span style={{ fontSize: "0.8rem", color: "var(--text-muted)", marginTop: 4, display: "block" }}>Optional. Type code and blur, or use LoV to select.</span>
+              )}
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Sales Person Name</label>
+              <input className="form-control" disabled value={salesPersonName} readOnly placeholder="—" />
+            </div>
+
+            <SalesPersonPickerModal
+              isOpen={salesPersonModalOpen}
+              onClose={() => setSalesPersonModalOpen(false)}
+              initialSearch={salesPersonCode}
+              onSelect={(code, name) => {
+                setSalesPersonCode(String(code));
+                setSalesPersonName(String(name || ""));
+                setSalesPersonLoadError("");
+                setSalesPersonModalOpen(false);
+              }}
+            />
+
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
               <div className="form-group">
                 <label className="form-label">Invoice Date <span className="required-marker">*</span></label>
@@ -302,13 +428,14 @@ export default function InvoiceForm({ onSubmit, submitting, initialData }) {
               type="submit"
               className="btn btn-primary"
               style={{ width: "100%", padding: "10px 14px", fontSize: "0.875rem" }}
-              disabled={submitting || hasEmptyProduct || hasEmptyCustomer}
+              disabled={submitting || hasEmptyProduct || hasEmptyCustomer || hasInvalidSalesPerson}
             >
               {submitting ? (initialData ? "Saving..." : "Creating...") : (initialData ? "Save Changes" : "Create Invoice")}
             </button>
-            {(hasEmptyCustomer || hasEmptyProduct) && (
+            {(hasEmptyCustomer || hasEmptyProduct || hasInvalidSalesPerson) && (
               <div style={{ marginTop: 6, fontSize: '0.75rem', color: '#ef4444', textAlign: 'center' }}>
                 {hasEmptyCustomer && <div>Please enter customer code or select from LoV</div>}
+                {hasInvalidSalesPerson && <div>Please select a valid sales person or clear the code</div>}
                 {hasEmptyProduct && <div>Please select a product for all items</div>}
               </div>
             )}
