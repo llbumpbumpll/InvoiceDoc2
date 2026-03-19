@@ -50,6 +50,8 @@ export default function InvoicePage({ mode: propMode }) {
                         invoice_no: h.invoice_no,
                         customer_code: h.customer_code,
                         customer_label: `${h.customer_code || ''} - ${h.customer_name}`.replace(/^ - /, ''),
+                        sales_person_code: h.sales_person_code,
+                        sales_person_name: h.sales_person_name,
                         invoice_date: h.invoice_date,
                         vat_rate: rate,
                         line_items: inv.line_items.map(li => ({
@@ -128,6 +130,9 @@ export default function InvoicePage({ mode: propMode }) {
                             <div className="text-muted">{h.address_line1 || "-"}</div>
                             <div className="text-muted">{h.address_line2 || ""}</div>
                             <div className="text-muted">{h.country_name || "-"}</div>
+                            <div className="font-bold" style={{ marginTop: 12 }}>Sales Person</div>
+                            <div>{h.sales_person_code || "-"}</div>
+                            <div className="text-muted">{h.sales_person_name || "-"}</div>
                         </div>
                         <div className="text-right">
                             <h2 className="mb-4">INVOICE</h2>
