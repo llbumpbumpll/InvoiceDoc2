@@ -130,7 +130,7 @@ export async function listSalesPersons({ search, page, limit }) { ... }  // เ�
 
 export async function getSalesPerson(code) {
   const { rows } = await pool.query(
-    `SELECT id, code, name, start_work_date FROM ____________ WHERE code = $1`,
+    `SELECT id, code, name, start_work_date FROM ____________ WHERE code = $1`,   // sales_person
     [code],
   );
   return rows[0] || null;
@@ -138,26 +138,26 @@ export async function getSalesPerson(code) {
 
 export async function createSalesPerson({ code, name, start_work_date }) {
   const { rows } = await pool.query(
-    `INSERT INTO ____________ (code, name, start_work_date)
+    `INSERT INTO ____________ (code, name, start_work_date)   // sales_person
      VALUES ($1, $2, $3)
      RETURNING id, code, name, start_work_date`,
-    [____________, ____________, start_work_date || null],
+    [____________, ____________, start_work_date || null],   // code, name
   );
   return rows[0];
 }
 
 export async function updateSalesPerson(code, { name, start_work_date }) {
   const { rows } = await pool.query(
-    `UPDATE ____________ SET name = $1, start_work_date = $2
+    `UPDATE ____________ SET name = $1, start_work_date = $2   // sales_person
      WHERE code = $3
      RETURNING id, code, name, start_work_date`,
-    [____________, start_work_date || null, ____________],
+    [____________, start_work_date || null, ____________],   // name, code
   );
   return rows[0] || null;
 }
 
 export async function deleteSalesPerson(code) {
-  await pool.query(`DELETE FROM ____________ WHERE code = $1`, [____________]);
+  await pool.query(`DELETE FROM ____________ WHERE code = $1`, [____________]);   // sales_person, code
   return { ok: true };
 }
 ```
@@ -185,7 +185,7 @@ export async function handleList(req, res) { ... }   // เดิม
 
 export async function handleGet(req, res) {
   try {
-    const sp = await ____________(req.params.____________);
+    const sp = await ____________(req.params.____________);   // getSalesPerson, code
     if (!sp) return res.status(404).json({ success: false, error: { message: "Sales person not found" } });
     res.json({ success: true, data: sp });
   } catch (err) {
@@ -195,7 +195,7 @@ export async function handleGet(req, res) {
 
 export async function handleCreate(req, res) {
   try {
-    const sp = await ____________(req.body);
+    const sp = await ____________(req.body);   // createSalesPerson
     res.status(201).json({ success: true, data: sp });
   } catch (err) {
     res.status(500).json({ success: false, error: { message: err.message } });
@@ -204,7 +204,7 @@ export async function handleCreate(req, res) {
 
 export async function handleUpdate(req, res) {
   try {
-    const sp = await ____________(req.params.____________, req.body);
+    const sp = await ____________(req.params.____________, req.body);   // updateSalesPerson, code
     if (!sp) return res.status(404).json({ success: false, error: { message: "Sales person not found" } });
     res.json({ success: true, data: sp });
   } catch (err) {
@@ -214,7 +214,7 @@ export async function handleUpdate(req, res) {
 
 export async function handleDelete(req, res) {
   try {
-    await ____________(req.params.____________);
+    await ____________(req.params.____________);   // deleteSalesPerson, code
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ success: false, error: { message: err.message } });
@@ -236,10 +236,10 @@ router.get("/", handleList);
 **After:**
 ```js
 router.get("/", handleList);
-router.get("/:____________", ____________);    // GET /api/sales-persons/:code
-router.post("/", ____________);               // POST /api/sales-persons
-router.put("/:____________", ____________);   // PUT /api/sales-persons/:code
-router.delete("/:____________", ____________); // DELETE /api/sales-persons/:code
+router.get("/:____________", ____________);    // code, handleGet
+router.post("/", ____________);               // handleCreate
+router.put("/:____________", ____________);   // code, handleUpdate
+router.delete("/:____________", ____________); // code, handleDelete
 ```
 
 ### ทดสอบ
@@ -266,10 +266,10 @@ import { pool } from "../db/pool.js";
 
 export async function getConfig(key) {
   const { rows } = await pool.query(
-    `SELECT value FROM ____________ WHERE key = $1`,
-    [____________],
+    `SELECT value FROM ____________ WHERE key = $1`,   // configuration
+    [____________],   // key
   );
-  return rows[0]?.____________ ?? null;
+  return rows[0]?.____________ ?? null;   // value
 }
 ```
 
@@ -280,14 +280,14 @@ export async function getConfig(key) {
 **ไฟล์ใหม่:** `server/src/controllers/configuration.controller.js`
 
 ```js
-import { ____________ } from "../services/configuration.service.js";
+import { ____________ } from "../services/configuration.service.js";   // getConfig
 
 export async function handleGetConfig(req, res) {
   try {
-    const value = await ____________(req.params.____________);
+    const value = await ____________(req.params.____________);   // getConfig, key
     if (value === null)
       return res.status(404).json({ success: false, error: { message: "Config key not found" } });
-    res.json({ success: true, data: { key: req.params.____________, value } });
+    res.json({ success: true, data: { key: req.params.____________, value } });   // key
   } catch (err) {
     res.status(500).json({ success: false, error: { message: err.message } });
   }
@@ -302,10 +302,10 @@ export async function handleGetConfig(req, res) {
 
 ```js
 import { Router } from "express";
-import { ____________ } from "../controllers/configuration.controller.js";
+import { ____________ } from "../controllers/configuration.controller.js";   // handleGetConfig
 
 const router = Router();
-router.get("/:____________", ____________);   // GET /api/config/:key
+router.get("/:____________", ____________);   // key, handleGetConfig
 
 export default router;
 ```
@@ -326,10 +326,10 @@ app.use("/api/sales-persons", salesPersonsRoutes);
 **After:**
 ```js
 import salesPersonsRoutes from "./routes/salesPersons.routes.js";
-import ____________ from "./routes/____________.routes.js";   // เพิ่ม
+import ____________ from "./routes/____________.routes.js";   // configurationRoutes, configuration
 ...
 app.use("/api/sales-persons", salesPersonsRoutes);
-app.use("/api/____________", ____________);   // เพิ่ม
+app.use("/api/____________", ____________);   // config, configurationRoutes
 ```
 
 ### ทดสอบ
@@ -368,13 +368,13 @@ async function enrichLineItems(client, line_items) {
   for (const li of line_items) {
     ...
     const extended_price = Number(li.quantity) * Number(unit_price);
-    const line_discount_percent = Number(li.____________ || 0);
+    const line_discount_percent = Number(li.____________ || 0);   // line_discount_percent
     const line_discount_amount  = Math.round(____________ * ____________ / 100 * 100) / 100;
     //                                        ^ extended     ^ percent
     const line_net_price        = Math.round((____________ - ____________) * 100) / 100;
     //                                        ^ extended     ^ discount_amount
     enriched.push({ ...li, product_id, unit_price, extended_price,
-                    ____________, ____________, ____________ });
+                    ____________, ____________, ____________ });   // line_discount_percent, line_discount_amount, line_net_price
   }
   return enriched;
 }
@@ -404,15 +404,15 @@ await client.query(
 
 **After** (เพิ่ม total_price, total_discount, vat_amount + คอลัมน์ใหม่):
 ```js
-const total_price    = enriched.reduce((s, x) => s + x.____________, 0);
-const total_discount = enriched.reduce((s, x) => s + x.____________, 0);
-const vat_amount     = Math.round((total_price - total_discount) * Number(____________) * 100) / 100;
-const amount_due     = (total_price - total_discount) + ____________;
+const total_price    = enriched.reduce((s, x) => s + x.____________, 0);   // extended_price
+const total_discount = enriched.reduce((s, x) => s + x.____________, 0);   // line_discount_amount
+const vat_amount     = Math.round((total_price - total_discount) * Number(____________) * 100) / 100;   // vat_rate
+const amount_due     = (total_price - total_discount) + ____________;   // vat_amount
 
 await client.query(
   `insert into invoice (..., vat_rate, total_price, total_discount, vat_amount, amount_due)
    values (..., $5, $6, $7, $8, $9)`,
-  [..., Number(vat_rate), ____________, ____________, ____________, ____________],
+  [..., Number(vat_rate), ____________, ____________, ____________, ____________],   // total_price, total_discount, vat_amount, amount_due
 );
 
 // INSERT line item — เพิ่ม 3 คอลัมน์ใหม่
@@ -420,7 +420,7 @@ await client.query(
   `insert into invoice_line_item
    (..., extended_price, line_discount_percent, line_discount_amount, line_net_price)
    values (..., $5, $6, $7, $8)`,
-  [..., li.extended_price, li.____________, li.____________, li.____________],
+  [..., li.extended_price, li.____________, li.____________, li.____________],   // line_discount_percent, line_discount_amount, line_net_price
 );
 ```
 
@@ -448,7 +448,7 @@ await client.query(
   `UPDATE invoice
    SET ..., vat_rate=$5, total_price=$6, total_discount=$7, vat_amount=$8, amount_due=$9
    WHERE id=$10`,
-  [..., Number(vat_rate), ____________, ____________, ____________, ____________, id],
+  [..., Number(vat_rate), ____________, ____________, ____________, ____________, id],   // total_price, total_discount, vat_amount, amount_due
 );
 
 // UPDATE line item — เพิ่ม 3 คอลัมน์ใหม่
@@ -456,7 +456,7 @@ await client.query(
   `UPDATE invoice_line_item
    SET ..., extended_price=$4, line_discount_percent=$5, line_discount_amount=$6, line_net_price=$7
    WHERE id=$8 AND invoice_id=$9`,
-  [..., li.extended_price, li.____________, li.____________, li.____________, lineId, id],
+  [..., li.extended_price, li.____________, li.____________, li.____________, lineId, id],   // line_discount_percent, line_discount_amount, line_net_price
 );
 ```
 
@@ -511,8 +511,8 @@ function unwrap(res) {
 }
 
 export async function getConfig(key) {
-  const res = unwrap(await http(`/api/config/${encodeURIComponent(____________)}`));
-  return res.data?.____________ ?? null;   // return value string หรือ null
+  const res = unwrap(await http(`/api/config/${encodeURIComponent(____________)}`));   // key
+  return res.data?.____________ ?? null;   // value
 }
 ```
 
@@ -527,7 +527,7 @@ export async function getConfig(key) {
 ```jsx
 import React from "react";
 import { toast } from "react-toastify";
-import { listSalesPersons, ____________ } from "../../api/salesPersons.api.js";
+import { listSalesPersons, ____________ } from "../../api/salesPersons.api.js";   // deleteSalesPerson
 import DataList from "../../components/DataList.jsx";
 import { ConfirmModal } from "../../components/Modal.jsx";
 
@@ -541,7 +541,7 @@ export default function SalesPersonList() {
 
   const confirmDelete = async () => {
     try {
-      await ____________(confirmModal.____________);
+      await ____________(confirmModal.____________);   // deleteSalesPerson, code
       closeConfirm();
       setRefreshTrigger((t) => t + 1);
       toast.success("Sales person deleted.");
@@ -552,24 +552,30 @@ export default function SalesPersonList() {
   };
 
   const columns = [
-    { key: "____________", label: "Code" },
-    { key: "____________", label: "Name" },
-    { key: "____________", label: "Start Date", render: (v) => v ? v.slice(0, 10) : "-" },
+    { key: "____________", label: "Code" },          // code
+    { key: "____________", label: "Name" },          // name
+    { key: "____________", label: "Start Date", render: (v) => v ? v.slice(0, 10) : "-" },   // start_work_date
   ];
 
   return (
     <>
-      <ConfirmModal ... />
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={closeConfirm}
+        onConfirm={____________}     {/* confirmDelete */}
+        title="Delete Sales Person"
+        message={`Are you sure you want to delete sales person "${confirmModal.____________}"?`}   {/* code */}
+      />
       <DataList
         title="Sales Persons"
-        fetchData={____________}
-        columns={____________}
+        fetchData={____________}      {/* fetchData */}
+        columns={____________}        {/* columns */}
         searchPlaceholder="Search code, name..."
         itemName="sales persons"
         basePath="/sales-persons"
-        itemKey="____________"
-        onDelete={____________}
-        refreshTrigger={____________}
+        itemKey="____________"        {/* code */}
+        onDelete={____________}       {/* handleDelete */}
+        refreshTrigger={____________} {/* refreshTrigger */}
       />
     </>
   );
@@ -600,7 +606,7 @@ export default function SalesPersonPage({ mode: propMode }) {
   // โหลดข้อมูลเมื่อ mode = view หรือ edit
   React.useEffect(() => {
     if (mode === "create") return;
-    ____________(____________)    // getSalesPerson(code)
+    ____________(____________)    // getSalesPerson, code
       .then((sp) => {
         if (sp) setForm({ code: sp.code, name: sp.name, start_work_date: sp.start_work_date?.slice(0, 10) || "" });
         else setErr("Sales person not found");
@@ -636,23 +642,23 @@ export default function SalesPersonPage({ mode: propMode }) {
       </div>
       {err && <div className="alert alert-error">{err}</div>}
       <div className="card">
-        <form onSubmit={____________}>
+        <form onSubmit={____________}>   {/* handleSubmit */}
           <div className="form-group">
             <label className="form-label">Code <span className="required-marker">*</span></label>
-            <input className="form-control" name="code" value={form.____________}
-              onChange={____________} disabled={____________}   {/* disabled เมื่อ edit */}
+            <input className="form-control" name="code" value={form.____________}   {/* code */}
+              onChange={____________} disabled={____________}   {/* handleChange, mode !== "create" */}
               placeholder="SP001" />
           </div>
           <div className="form-group">
             <label className="form-label">Name <span className="required-marker">*</span></label>
-            <input className="form-control" name="name" value={form.____________} onChange={____________} />
+            <input className="form-control" name="name" value={form.____________} onChange={____________} />   {/* name, handleChange */}
           </div>
           <div className="form-group">
             <label className="form-label">Start Date</label>
-            <input type="____________" className="form-control" name="start_work_date"
-              value={form.____________} onChange={____________} />
+            <input type="____________" className="form-control" name="start_work_date"   {/* date */}
+              value={form.____________} onChange={____________} />   {/* start_work_date, handleChange */}
           </div>
-          <button type="submit" className="btn btn-primary" disabled={____________}>
+          <button type="submit" className="btn btn-primary" disabled={____________}>   {/* submitting */}
             {submitting ? "Saving..." : (mode === "create" ? "Create" : "Update")}
           </button>
         </form>
@@ -681,10 +687,10 @@ import SalesPersonPage from "./pages/salesPersons/SalesPersonPage.jsx";
 
 **เพิ่ม Routes:** (ทุก route ต้องครอบด้วย `<Layout>` เหมือน route อื่นๆ ในโปรเจค)
 ```jsx
-<Route path="/sales-persons" element={<Layout><____________ /></Layout>} />
-<Route path="/sales-persons/new" element={<Layout><____________ mode="create" /></Layout>} />
-<Route path="/sales-persons/:code" element={<Layout><____________ mode="view" /></Layout>} />
-<Route path="/sales-persons/:code/edit" element={<Layout><____________ mode="edit" /></Layout>} />
+<Route path="/sales-persons" element={<Layout><____________ /></Layout>} />               {/* SalesPersonList */}
+<Route path="/sales-persons/new" element={<Layout><____________ mode="create" /></Layout>} />  {/* SalesPersonPage */}
+<Route path="/sales-persons/:code" element={<Layout><____________ mode="view" /></Layout>} />  {/* SalesPersonPage */}
+<Route path="/sales-persons/:code/edit" element={<Layout><____________ mode="edit" /></Layout>} />  {/* SalesPersonPage */}
 ```
 
 ---
@@ -719,14 +725,14 @@ function computeExtended(it) {
 
 function computeDiscountAmount(it) {
   const extended = computeExtended(it);
-  const pct = Number(it.____________ || 0);
+  const pct = Number(it.____________ || 0);   // line_discount_percent
   return Math.round(____________ * ____________ / 100 * 100) / 100;
   //                ^ extended    ^ pct
 }
 
 function computeNetPrice(it) {
   return Math.round((____________ - ____________) * 100) / 100;
-  //                 ^ extended     ^ discountAmount
+  //                 ^ extended     ^ discountAmount (call computeDiscountAmount)
 }
 
 const totalPrice    = items.reduce((s, it) => s + computeExtended(it), 0);
@@ -768,8 +774,8 @@ const totalDiscount = items.reduce((s, it) => s + computeDiscountAmount(it), 0);
 ```jsx
 <LineItemRow
   ...
-  computeDiscountAmount={____________}
-  computeNetPrice={____________}
+  computeDiscountAmount={____________}   {/* computeDiscountAmount */}
+  computeNetPrice={____________}         {/* computeNetPrice */}
 />
 ```
 
@@ -794,29 +800,36 @@ export default function LineItemRow({
 **เพิ่ม 3 `<td>` ต่อจาก Extended Price:**
 ```jsx
 {/* Extended Price — เดิม */}
-<td><div style={{ textAlign: "right", fontWeight: 600 }}>{formatBaht(____________)}</div></td>
+<td>
+  <div style={{ textAlign: "right", fontWeight: 600, color: "var(--primary)", fontSize: "0.95rem" }}>
+    {formatBaht(____________)}   {/* extended */}
+  </div>
+</td>
 
 {/* Disc % — editable */}
 <td>
   <input
-    type="number" step="0.01" min="0" max="100"
-    value={it.____________ ?? 0}
-    onChange={(e) => update(i, { ____________: e.target.value })}
+    type="number"
+    step="0.01"
+    min="0"
+    max="100"
+    value={it.____________ ?? 0}                                    {/* line_discount_percent */}
+    onChange={(e) => update(i, { ____________: e.target.value })}  {/* line_discount_percent */}
     className="form-control"
-    style={{ textAlign: "right" }}
+    style={{ textAlign: "right", padding: "6px 10px", fontSize: "0.9rem" }}
   />
 </td>
 
-{/* Disc Amt — display only */}
+{/* Disc Amt — display only (calculated, ห้าม edit) */}
 <td>
-  <div style={{ textAlign: "right", color: "#ef4444" }}>
+  <div style={{ textAlign: "right", color: "#ef4444", padding: "8px 12px", fontSize: "0.9rem" }}>
     {formatBaht(____________)}   {/* discountAmount */}
   </div>
 </td>
 
-{/* Net Price — display only */}
+{/* Net Price — display only (calculated, ห้าม edit) */}
 <td>
-  <div style={{ textAlign: "right", fontWeight: 600 }}>
+  <div style={{ textAlign: "right", fontWeight: 600, color: "var(--primary)", fontSize: "0.95rem", padding: "8px 12px" }}>
     {formatBaht(____________)}   {/* netPrice */}
   </div>
 </td>
@@ -853,7 +866,7 @@ const [vatPercent, setVatPercent] = React.useState(7);   // 7 = 7%
 React.useEffect(() => {
   if (!initialData) {
     ____________("vat_percent")   // getConfig
-      .then((val) => { if (val !== null) setVatPercent(Number(____________)); })
+      .then((val) => { if (val !== null) setVatPercent(Number(____________)); })   // val
       .catch(() => {});   // ใช้ default 7 ถ้า error
   }
 }, []);
@@ -874,7 +887,7 @@ const mappedItems = (initialData.line_items || []).map(li => ({
 
 **After:**
 ```js
-setVatPercent(Number(initialData.____________ || 0.07) * 100);
+setVatPercent(Number(initialData.____________ || 0.07) * 100);   // vat_rate
 //             ^ vat_rate จาก DB เก็บเป็น decimal → คูณ 100 ให้เป็น %
 const mappedItems = (initialData.line_items || []).map(li => ({
   ...
@@ -896,14 +909,14 @@ const amountDue = subtotal + vat;
 
 **After:**
 ```js
-const vatRate     = ____________ / 100;   // vatPercent / 100
+const vatRate     = ____________ / 100;   // vatPercent
 
 const totalPrice    = items.reduce((s, it) =>
   s + Number(it.quantity || 0) * Number(it.unit_price || 0), 0);
 
 const totalDiscount = items.reduce((s, it) => {
   const extended = Number(it.quantity || 0) * Number(it.unit_price || 0);
-  return s + Math.round(extended * Number(it.____________ || 0) / 100 * 100) / 100;
+  return s + Math.round(extended * Number(it.____________ || 0) / 100 * 100) / 100;   // line_discount_percent
 }, 0);
 
 const vatAmount  = Math.round((____________ - ____________) * ____________ * 100) / 100;
@@ -953,12 +966,12 @@ const payload = {
 ```js
 const payload = {
   ...
-  vat_rate: ____________,   // vatRate (decimal: vatPercent / 100)
+  vat_rate: ____________,   // vatRate
   line_items: items.map((x) => ({
     product_code: ...,
     quantity: ...,
     unit_price: ...,
-    ____________: Number(x.____________ || 0),   // line_discount_percent
+    ____________: Number(x.____________ || 0),   // line_discount_percent, line_discount_percent
   })),
 };
 ```
@@ -976,11 +989,24 @@ const payload = {
 
 **After:**
 ```jsx
-<span>Total Price</span>    <span>{formatBaht(____________)}</span>
-<span>Total Discount</span> <span style={{ color: '#ef4444' }}>{formatBaht(____________)}</span>
-<span>VAT ({____________}%)</span> <span>{formatBaht(____________)}</span>
-{/* ^ vatPercent */}
-<span>Amount Due</span>     <span>{formatBaht(____________)}</span>
+<div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.875rem", color: "var(--text-muted)" }}>
+  <span>Total Price</span>
+  <span className="amount">{formatBaht(____________)}</span>    {/* totalPrice */}
+</div>
+<div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.875rem", color: "#ef4444" }}>
+  <span>Total Discount</span>
+  <span className="amount">-{formatBaht(____________)}</span>   {/* totalDiscount */}
+</div>
+<div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.875rem", color: "var(--text-muted)" }}>
+  <span>VAT ({____________}%)</span>    {/* vatPercent */}
+  <span className="amount">{formatBaht(____________)}</span>   {/* vatAmount */}
+</div>
+<div style={{ borderTop: "1px solid var(--border)", paddingTop: 10, marginTop: 2,
+              display: "flex", justifyContent: "space-between",
+              fontSize: "1.1rem", fontWeight: 700, color: "var(--primary)" }}>
+  <span>Amount Due</span>
+  <span>{formatBaht(____________)}</span>   {/* amountDue */}
+</div>
 ```
 
 ---
@@ -1010,10 +1036,10 @@ setInitialData({
 ```js
 setInitialData({
   ...
-  vat_rate: Number(h.____________ || 0.07),   // ใช้ค่าจาก DB ตรงๆ
+  vat_rate: Number(h.____________ || 0.07),   // vat_rate
   line_items: inv.line_items.map(li => ({
     line_item_id: li.id, ..., unit_price: li.unit_price,
-    ____________: Number(li.____________ || 0),   // line_discount_percent
+    ____________: Number(li.____________ || 0),   // line_discount_percent, line_discount_percent
   }))
 });
 ```
@@ -1054,10 +1080,10 @@ setInitialData({
   {lines.map((li) => (
     <tr key={li.id}>
       <td>...</td><td>...</td><td>...</td><td>...</td>
-      <td className="text-right">{formatBaht(li.____________)}</td>
-      <td className="text-right">{Number(li.____________ || 0).toFixed(2)}%</td>
-      <td className="text-right">{formatBaht(li.____________)}</td>
-      <td className="text-right font-bold">{formatBaht(li.____________)}</td>
+      <td className="text-right">{formatBaht(li.____________)}</td>              {/* extended_price */}
+      <td className="text-right">{Number(li.____________ || 0).toFixed(2)}%</td>  {/* line_discount_percent */}
+      <td className="text-right">{formatBaht(li.____________)}</td>              {/* line_discount_amount */}
+      <td className="text-right font-bold">{formatBaht(li.____________)}</td>    {/* line_net_price */}
     </tr>
   ))}
 </tbody>
@@ -1069,18 +1095,38 @@ setInitialData({
 
 **Before:**
 ```jsx
-<span>Subtotal:</span>  <span>{formatBaht(h.total_amount)}</span>
-<span>VAT:</span>       <span>{formatBaht(h.vat)}</span>
-<span>Total Due:</span> <span>{formatBaht(h.amount_due)}</span>
+<div className="flex justify-between mb-2">
+  <span>Subtotal:</span>
+  <span>{formatBaht(h.total_amount)}</span>
+</div>
+<div className="flex justify-between mb-2">
+  <span>VAT:</span>
+  <span>{formatBaht(h.vat)}</span>
+</div>
+<div className="flex justify-between font-bold">
+  <span>Total Due:</span>
+  <span>{formatBaht(h.amount_due)}</span>
+</div>
 ```
 
 **After:**
 ```jsx
-<span>Total Price:</span>    <span>{formatBaht(h.____________)}</span>
-<span>Total Discount:</span> <span style={{ color: '#ef4444' }}>{formatBaht(h.____________)}</span>
-<span>VAT ({(Number(h.____________ || 0) * 100).toFixed(0)}%):</span>
-<span>{formatBaht(h.____________)}</span>
-<span>Amount Due:</span>     <span>{formatBaht(h.____________)}</span>
+<div className="flex justify-between mb-2">
+  <span>Total Price:</span>
+  <span>{formatBaht(h.____________)}</span>         {/* total_price */}
+</div>
+<div className="flex justify-between mb-2" style={{ color: '#ef4444' }}>
+  <span>Total Discount:</span>
+  <span>-{formatBaht(h.____________)}</span>        {/* total_discount */}
+</div>
+<div className="flex justify-between mb-2">
+  <span>VAT ({(Number(h.____________ || 0) * 100).toFixed(0)}%):</span>   {/* vat_rate */}
+  <span>{formatBaht(h.____________)}</span>         {/* vat_amount */}
+</div>
+<div className="flex justify-between font-bold">
+  <span>Amount Due:</span>
+  <span>{formatBaht(h.____________)}</span>         {/* amount_due */}
+</div>
 ```
 
 ---
