@@ -3,6 +3,7 @@
 import React from "react";
 import LineItemsEditor from "./LineItemsEditor.jsx";
 import CustomerPickerModal from "./CustomerPickerModal.jsx";
+import SalesPersonPickerModal from "./SalesPersonPickerModal.jsx";
 import { AlertModal } from "./Modal.jsx";
 import { getCustomer } from "../api/customers.api.js";
 import { formatBaht } from "../utils.js";
@@ -17,6 +18,9 @@ export default function InvoiceForm({ onSubmit, submitting, initialData }) {
   const [alertModal, setAlertModal] = React.useState({ isOpen: false, title: "Validation Error", message: "" });
   const [customerModalOpen, setCustomerModalOpen] = React.useState(false);
   const [customerDetails, setCustomerDetails] = React.useState(null); // name + address (readonly)
+  const [salesPersonCode, setSalesPersonCode] = React.useState("");
+  const [salesPersonName, setSalesPersonName] = React.useState("");
+  const [salesPersonModalOpen, setSalesPersonModalOpen] = React.useState(false);
   const [customerLoadError, setCustomerLoadError] = React.useState("");
 
   // When customer code is set (from LoV or initialData), fetch name and address
@@ -63,6 +67,8 @@ export default function InvoiceForm({ onSubmit, submitting, initialData }) {
     if (initialData) {
       setInvoiceNo(initialData.invoice_no);
       setCustomerCode(initialData.customer_code || "");
+      setSalesPersonCode(initialData.sales_person_code || "");
+      setSalesPersonName(initialData.sales_person_name || "");
       const d = initialData.invoice_date ? new Date(initialData.invoice_date).toISOString().slice(0, 10) : "";
       setInvoiceDate(d);
       setVatRate(Number(initialData.vat_rate || 0.07));
@@ -134,6 +140,7 @@ export default function InvoiceForm({ onSubmit, submitting, initialData }) {
     const payload = {
       invoice_no: initialData ? invoiceNo.trim() : (autoCode ? "" : invoiceNo.trim()),
       customer_code: String(customerCode).trim(),
+      sales_person_code: String(salesPersonCode || "").trim() || undefined,
       invoice_date: invoiceDate,
       vat_rate: Number(vatRate),
       line_items: items.map((x) => {
@@ -248,6 +255,37 @@ export default function InvoiceForm({ onSubmit, submitting, initialData }) {
                 setCustomerCode(String(code));
                 setCustomerModalOpen(false);
               }}
+            />
+
+            <div className="form-group">
+              <label className="form-label">Sales Person Code</label>
+              <div style={{ display: "flex", gap: 8 }}>
+                <input
+                  className="form-control"
+                  value={salesPersonCode}
+                  onChange={(e) => { setSalesPersonCode(e.target.value); setSalesPersonName(""); }}
+                  placeholder="e.g. SP001"
+                  style={{ flex: 1 }}
+                />
+                <button type="button" className="btn btn-primary" onClick={() => setSalesPersonModalOpen(true)}>LoV</button>
+                {salesPersonCode && (
+                  <button type="button" onClick={() => { setSalesPersonCode(""); setSalesPersonName(""); }}
+                    style={{ padding: "0 12px", border: "1px solid var(--border)", borderRadius: "var(--radius-sm)", background: "var(--bg-body)", color: "var(--text-muted)", cursor: "pointer", fontSize: "1.2rem", lineHeight: 1 }}>
+                    ×
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Sales Person Name</label>
+              <input className="form-control" disabled value={salesPersonName} placeholder="—" />
+            </div>
+
+            <SalesPersonPickerModal
+              isOpen={salesPersonModalOpen}
+              onClose={() => setSalesPersonModalOpen(false)}
+              onSelect={(code, name) => { setSalesPersonCode(code); setSalesPersonName(name); setSalesPersonModalOpen(false); }}
             />
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
