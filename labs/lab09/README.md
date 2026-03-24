@@ -10,7 +10,7 @@
 
 | # | งาน | ไฟล์หลัก |
 |---|-----|---------|
-| 1 | Database delta script | `database/sql/invoice_lab3_delta.sql` |
+| 1 | Database delta script | `database/sql/004_invoice_lab3_delta.sql` |
 | 2 | Sales Person CRUD API | `server/src/services/salesPersons.service.js` + controller + routes |
 | 3 | Config API (vat_percent) | `server/src/services/configuration.service.js` + controller + routes |
 | 4 | แก้ Invoice Service | `server/src/services/invoices.service.js` |
@@ -26,7 +26,7 @@
 
 > Lab นี้ใช้ **incremental migration** — ห้าม drop table เดิม ใช้ `ALTER TABLE ... ADD COLUMN IF NOT EXISTS` เท่านั้น
 
-**ไฟล์ใหม่:** `database/sql/invoice_lab3_delta.sql`
+**ไฟล์ใหม่:** `database/sql/004_invoice_lab3_delta.sql`
 
 ### 1.1 เพิ่มคอลัมน์ discount ใน invoice_line_item
 
@@ -91,17 +91,17 @@ SELECT setval(pg_get_serial_sequence('____________', 'id'), coalesce(max(id), 0)
 
 **macOS / Linux:**
 ```bash
-cat database/sql/invoice_lab3_delta.sql | docker exec -i pgdatabase psql -U root -d invoices_db
+cat database/sql/004_invoice_lab3_delta.sql | docker exec -i pgdatabase psql -U root -d invoices_db
 ```
 
 **Windows (PowerShell):**
 ```powershell
-Get-Content database\sql\invoice_lab3_delta.sql | docker exec -i pgdatabase psql -U root -d invoices_db
+Get-Content database\sql\004_invoice_lab3_delta.sql | docker exec -i pgdatabase psql -U root -d invoices_db
 ```
 
 **Windows (CMD):**
 ```cmd
-type database\sql\invoice_lab3_delta.sql | docker exec -i pgdatabase psql -U root -d invoices_db
+type database\sql\004_invoice_lab3_delta.sql | docker exec -i pgdatabase psql -U root -d invoices_db
 ```
 
 เปิด Adminer [http://localhost:8080](http://localhost:8080) แล้วตรวจ:
