@@ -919,10 +919,12 @@ const totalDiscount = items.reduce((s, it) => {
   return s + Math.round(extended * Number(it.____________ || 0) / 100 * 100) / 100;   // line_discount_percent
 }, 0);
 
-const vatAmount  = Math.round((____________ - ____________) * ____________ * 100) / 100;
-//                              ^ totalPrice   totalDiscount   vatRate
-const amountDue  = (____________ - ____________) + ____________;
-//                   ^ totalPrice   totalDiscount   vatAmount
+const netPrice  = Math.round((____________ - ____________) * 100) / 100;
+//                              ^ totalPrice   totalDiscount
+const vatAmount  = Math.round(____________ * ____________ * 100) / 100;
+//                              ^ netPrice     vatRate
+const amountDue  = ____________ + ____________;
+//                  ^ netPrice    vatAmount
 ```
 
 ---
@@ -996,6 +998,10 @@ const payload = {
 <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.875rem", color: "#ef4444" }}>
   <span>Total Discount</span>
   <span className="amount">-{formatBaht(____________)}</span>   {/* totalDiscount */}
+</div>
+<div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.875rem", color: "var(--text-muted)" }}>
+  <span>Net Price</span>
+  <span className="amount">{formatBaht(____________)}</span>   {/* netPrice */}
 </div>
 <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.875rem", color: "var(--text-muted)" }}>
   <span>VAT ({____________}%)</span>    {/* vatPercent */}
@@ -1120,6 +1126,10 @@ setInitialData({
   <span>-{formatBaht(h.____________)}</span>        {/* total_discount */}
 </div>
 <div className="flex justify-between mb-2">
+  <span>Net Price:</span>
+  <span>{formatBaht(Math.round((Number(h.____________) - Number(h.____________)) * 100) / 100)}</span>   {/* total_price, total_discount */}
+</div>
+<div className="flex justify-between mb-2">
   <span>VAT ({(Number(h.____________ || 0) * 100).toFixed(0)}%):</span>   {/* vat_rate */}
   <span>{formatBaht(h.____________)}</span>         {/* vat_amount */}
 </div>
@@ -1139,7 +1149,7 @@ setInitialData({
 | Sales Person List | `GET /api/sales-persons` | รายการ sales person |
 | Sales Person CRUD | สร้าง, แก้, ลบ จากหน้า UI | บันทึกได้ ไม่ error |
 | Invoice ใหม่ | สร้าง invoice + ใส่ discount % | Disc Amt, Net Price คำนวณถูกต้อง |
-| Summary card | สร้าง invoice | Total Price, Total Discount, VAT, Amount Due ถูกต้อง |
+| Summary card | สร้าง invoice | Total Price, Total Discount, Net Price, VAT, Amount Due ถูกต้อง |
 | บันทึกแล้วดู view | เปิด invoice | ตารางแสดงครบ 4 คอลัมน์ราคา |
 | Print PDF | กด Print PDF | ตารางและ summary ครบใน PDF |
 | Edit invoice | กด Edit | discount % โหลดมาจาก DB |
