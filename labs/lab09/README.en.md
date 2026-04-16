@@ -15,10 +15,11 @@
 | 3 | Config API (vat_percent) | `server/src/services/configuration.service.js` + controller + routes |
 | 4 | Update Invoice Service | `server/src/services/invoices.service.js` |
 | 5 | Client: Config API | `client/src/api/configuration.api.js` |
-| 6 | Client: Sales Person Pages | `SalesPersonList.jsx` + `SalesPersonPage.jsx` |
-| 7 | Client: Line Item Editor | `LineItemsEditor.jsx` + `LineItemRow.jsx` |
-| 8 | Client: InvoiceForm | `InvoiceForm.jsx` |
-| 9 | Client: InvoicePage | `InvoicePage.jsx` |
+| 6 | Client: Sales Person API | `client/src/api/salesPersons.api.js` |
+| 7 | Client: Sales Person Pages | `SalesPersonList.jsx` + `SalesPersonPage.jsx` |
+| 8 | Client: Line Item Editor | `LineItemsEditor.jsx` + `LineItemRow.jsx` |
+| 9 | Client: InvoiceForm | `InvoiceForm.jsx` |
+| 10 | Client: InvoicePage | `InvoicePage.jsx` |
 
 ---
 
@@ -518,9 +519,47 @@ export async function getConfig(key) {
 
 ---
 
-## Step 6 — Client: Sales Person Pages (2 new files)
+## Step 6 — Client: Sales Person API
 
-### 6.1 SalesPersonList.jsx
+> Follow the project pattern — never import `http` directly inside a component. Always create an API file first.
+
+**File:** `client/src/api/salesPersons.api.js`
+
+**Before:** (only `listSalesPersons`)
+```js
+export async function listSalesPersons(params = {}) { ... }
+```
+
+**After:** (add 4 functions below)
+```js
+export async function listSalesPersons(params = {}) { ... }  // unchanged
+
+export async function getSalesPerson(____________) {   // code
+  const res = unwrap(await http(`/api/sales-persons/${encodeURIComponent(____________)}`));   // code
+  return res.____________ ?? null;   // data
+}
+
+export async function createSalesPerson(____________) {   // body
+  const res = unwrap(await http(`/api/sales-persons`, { method: "POST", body: JSON.stringify(____________) }));   // body
+  return res.____________;   // data
+}
+
+export async function updateSalesPerson(____________, ____________) {   // code, body
+  const res = unwrap(await http(`/api/sales-persons/${encodeURIComponent(____________)}`, { method: "PUT", body: JSON.stringify(____________) }));   // code, body
+  return res.____________;   // data
+}
+
+export async function deleteSalesPerson(____________) {   // code
+  unwrap(await http(`/api/sales-persons/${encodeURIComponent(____________)}`, { method: "DELETE" }));   // code
+  return { ok: true };
+}
+```
+
+---
+
+## Step 7 — Client: Sales Person Pages (2 new files)
+
+### 7.1 SalesPersonList.jsx
 
 **New file:** `client/src/pages/salesPersons/SalesPersonList.jsx`
 
@@ -584,7 +623,7 @@ export default function SalesPersonList() {
 
 ---
 
-### 6.2 SalesPersonPage.jsx
+### 7.2 SalesPersonPage.jsx
 
 **New file:** `client/src/pages/salesPersons/SalesPersonPage.jsx`
 
@@ -670,7 +709,7 @@ export default function SalesPersonPage({ mode: propMode }) {
 
 ---
 
-### 6.3 Add Route + Menu in main.jsx
+### 7.3 Add Route + Menu in main.jsx
 
 **File:** `client/src/main.jsx`
 
@@ -695,9 +734,9 @@ import SalesPersonPage from "./pages/salesPersons/SalesPersonPage.jsx";
 
 ---
 
-## Step 7 — Client: Line Item Editor
+## Step 8 — Client: Line Item Editor
 
-### 7.1 LineItemsEditor.jsx — add discount default + calculations
+### 8.1 LineItemsEditor.jsx — add discount default + calculations
 
 **File:** `client/src/components/LineItemsEditor.jsx`
 
@@ -781,7 +820,7 @@ const totalDiscount = items.reduce((s, it) => s + computeDiscountAmount(it), 0);
 
 ---
 
-### 7.2 LineItemRow.jsx — add 3 new columns
+### 8.2 LineItemRow.jsx — add 3 new columns
 
 **File:** `client/src/components/LineItemRow.jsx`
 
@@ -837,11 +876,11 @@ export default function LineItemRow({
 
 ---
 
-## Step 8 — Client: InvoiceForm
+## Step 9 — Client: InvoiceForm
 
 **File:** `client/src/components/InvoiceForm.jsx`
 
-### 8.1 Add import
+### 9.1 Add import
 
 ```js
 import { getConfig } from "../api/____________.api.js";   // configuration
@@ -849,7 +888,7 @@ import { getConfig } from "../api/____________.api.js";   // configuration
 
 ---
 
-### 8.2 Change vatRate state + fetch from config
+### 9.2 Change vatRate state + fetch from config
 
 **Before:**
 ```js
@@ -874,7 +913,7 @@ React.useEffect(() => {
 
 ---
 
-### 8.3 Update initialData mapping (edit mode)
+### 9.3 Update initialData mapping (edit mode)
 
 **Before:**
 ```js
@@ -898,7 +937,7 @@ const mappedItems = (initialData.line_items || []).map(li => ({
 
 ---
 
-### 8.4 New summary calculations
+### 9.4 New summary calculations
 
 **Before:**
 ```js
@@ -929,7 +968,7 @@ const amountDue = ____________ + ____________;
 
 ---
 
-### 8.5 Update VAT input — from decimal to percent
+### 9.5 Update VAT input — from decimal to percent
 
 **Before:**
 ```jsx
@@ -949,7 +988,7 @@ const amountDue = ____________ + ____________;
 
 ---
 
-### 8.6 Update payload — send vat_rate + line_discount_percent
+### 9.6 Update payload — send vat_rate + line_discount_percent
 
 **Before:**
 ```js
@@ -980,7 +1019,7 @@ const payload = {
 
 ---
 
-### 8.7 Update Summary Card — show 4 rows
+### 9.7 Update Summary Card — show 4 rows
 
 **Before:**
 ```jsx
@@ -1017,11 +1056,11 @@ const payload = {
 
 ---
 
-## Step 9 — Client: InvoicePage
+## Step 10 — Client: InvoicePage
 
 **File:** `client/src/pages/invoices/InvoicePage.jsx`
 
-### 9.1 Edit mode — update initialData mapping
+### 10.1 Edit mode — update initialData mapping
 
 **Before:**
 ```js
@@ -1052,7 +1091,7 @@ setInitialData({
 
 ---
 
-### 9.2 View mode — add 3 columns to the table
+### 10.2 View mode — add 3 columns to the table
 
 **Before:**
 ```jsx
@@ -1097,7 +1136,7 @@ setInitialData({
 
 ---
 
-### 9.3 View mode — update summary section
+### 10.3 View mode — update summary section
 
 **Before:**
 ```jsx
