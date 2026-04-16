@@ -15,10 +15,11 @@
 | 3 | Config API (vat_percent) | `server/src/services/configuration.service.js` + controller + routes |
 | 4 | แก้ Invoice Service | `server/src/services/invoices.service.js` |
 | 5 | Client: Config API | `client/src/api/configuration.api.js` |
-| 6 | Client: Sales Person Pages | `SalesPersonList.jsx` + `SalesPersonPage.jsx` |
-| 7 | Client: Line Item Editor | `LineItemsEditor.jsx` + `LineItemRow.jsx` |
-| 8 | Client: InvoiceForm | `InvoiceForm.jsx` |
-| 9 | Client: InvoicePage | `InvoicePage.jsx` |
+| 6 | Client: Sales Person API | `client/src/api/salesPersons.api.js` |
+| 7 | Client: Sales Person Pages | `SalesPersonList.jsx` + `SalesPersonPage.jsx` |
+| 8 | Client: Line Item Editor | `LineItemsEditor.jsx` + `LineItemRow.jsx` |
+| 9 | Client: InvoiceForm | `InvoiceForm.jsx` |
+| 10 | Client: InvoicePage | `InvoicePage.jsx` |
 
 ---
 
@@ -518,9 +519,47 @@ export async function getConfig(key) {
 
 ---
 
-## Step 6 — Client: Sales Person Pages (2 ไฟล์ใหม่)
+## Step 6 — Client: Sales Person API
 
-### 6.1 SalesPersonList.jsx
+> ตามรูปแบบโปรเจค ห้าม import `http` ตรงๆ ในไฟล์ component ต้องสร้าง api file ก่อน
+
+**ไฟล์:** `client/src/api/salesPersons.api.js`
+
+**Before:** (มีแค่ `listSalesPersons`)
+```js
+export async function listSalesPersons(params = {}) { ... }
+```
+
+**After:** (เพิ่ม 4 functions ด้านล่าง)
+```js
+export async function listSalesPersons(params = {}) { ... }  // เดิม ไม่ต้องแก้
+
+export async function getSalesPerson(____________) {   // code
+  const res = unwrap(await http(`/api/sales-persons/${encodeURIComponent(____________)}`));   // code
+  return res.____________ ?? null;   // data
+}
+
+export async function createSalesPerson(____________) {   // body
+  const res = unwrap(await http(`/api/sales-persons`, { method: "POST", body: JSON.stringify(____________) }));   // body
+  return res.____________;   // data
+}
+
+export async function updateSalesPerson(____________, ____________) {   // code, body
+  const res = unwrap(await http(`/api/sales-persons/${encodeURIComponent(____________)}`, { method: "PUT", body: JSON.stringify(____________) }));   // code, body
+  return res.____________;   // data
+}
+
+export async function deleteSalesPerson(____________) {   // code
+  unwrap(await http(`/api/sales-persons/${encodeURIComponent(____________)}`, { method: "DELETE" }));   // code
+  return { ok: true };
+}
+```
+
+---
+
+## Step 7 — Client: Sales Person Pages (2 ไฟล์ใหม่)
+
+### 7.1 SalesPersonList.jsx
 
 **ไฟล์ใหม่:** `client/src/pages/salesPersons/SalesPersonList.jsx`
 
@@ -584,7 +623,7 @@ export default function SalesPersonList() {
 
 ---
 
-### 6.2 SalesPersonPage.jsx
+### 7.2 SalesPersonPage.jsx
 
 **ไฟล์ใหม่:** `client/src/pages/salesPersons/SalesPersonPage.jsx`
 
@@ -670,7 +709,7 @@ export default function SalesPersonPage({ mode: propMode }) {
 
 ---
 
-### 6.3 เพิ่ม Route + Menu ใน main.jsx
+### 7.3 เพิ่ม Route + Menu ใน main.jsx
 
 **ไฟล์:** `client/src/main.jsx`
 
@@ -695,9 +734,9 @@ import SalesPersonPage from "./pages/salesPersons/SalesPersonPage.jsx";
 
 ---
 
-## Step 7 — Client: Line Item Editor
+## Step 8 — Client: Line Item Editor
 
-### 7.1 LineItemsEditor.jsx — เพิ่ม default + คำนวณ discount
+### 8.1 LineItemsEditor.jsx — เพิ่ม default + คำนวณ discount
 
 **ไฟล์:** `client/src/components/LineItemsEditor.jsx`
 
@@ -781,7 +820,7 @@ const totalDiscount = items.reduce((s, it) => s + computeDiscountAmount(it), 0);
 
 ---
 
-### 7.2 LineItemRow.jsx — เพิ่ม 3 คอลัมน์
+### 8.2 LineItemRow.jsx — เพิ่ม 3 คอลัมน์
 
 **ไฟล์:** `client/src/components/LineItemRow.jsx`
 
@@ -837,11 +876,11 @@ export default function LineItemRow({
 
 ---
 
-## Step 8 — Client: InvoiceForm
+## Step 9 — Client: InvoiceForm
 
 **ไฟล์:** `client/src/components/InvoiceForm.jsx`
 
-### 8.1 เพิ่ม import
+### 9.1 เพิ่ม import
 
 ```js
 import { getConfig } from "../api/____________.api.js";   // configuration
@@ -849,7 +888,7 @@ import { getConfig } from "../api/____________.api.js";   // configuration
 
 ---
 
-### 8.2 เปลี่ยน vatRate state + ดึงจาก config
+### 9.2 เปลี่ยน vatRate state + ดึงจาก config
 
 **Before:**
 ```js
@@ -874,7 +913,7 @@ React.useEffect(() => {
 
 ---
 
-### 8.3 แก้ initialData mapping (edit mode)
+### 9.3 แก้ initialData mapping (edit mode)
 
 **Before:**
 ```js
@@ -898,7 +937,7 @@ const mappedItems = (initialData.line_items || []).map(li => ({
 
 ---
 
-### 8.4 คำนวณ summary ใหม่
+### 9.4 คำนวณ summary ใหม่
 
 **Before:**
 ```js
@@ -929,7 +968,7 @@ const amountDue  = ____________ + ____________;
 
 ---
 
-### 8.5 แก้ VAT input — จาก decimal เป็น %
+### 9.5 แก้ VAT input — จาก decimal เป็น %
 
 **Before:**
 ```jsx
@@ -949,7 +988,7 @@ const amountDue  = ____________ + ____________;
 
 ---
 
-### 8.6 แก้ payload — ส่ง vat_rate + line_discount_percent
+### 9.6 แก้ payload — ส่ง vat_rate + line_discount_percent
 
 **Before:**
 ```js
@@ -980,7 +1019,7 @@ const payload = {
 
 ---
 
-### 8.7 แก้ Summary Card — แสดง 4 บรรทัด
+### 9.7 แก้ Summary Card — แสดง 4 บรรทัด
 
 **Before:**
 ```jsx
@@ -1017,11 +1056,11 @@ const payload = {
 
 ---
 
-## Step 9 — Client: InvoicePage
+## Step 10 — Client: InvoicePage
 
 **ไฟล์:** `client/src/pages/invoices/InvoicePage.jsx`
 
-### 9.1 Edit mode — แก้ initialData mapping
+### 10.1 Edit mode — แก้ initialData mapping
 
 **Before:**
 ```js
@@ -1052,7 +1091,7 @@ setInitialData({
 
 ---
 
-### 9.2 View mode — เพิ่ม 3 คอลัมน์ใน table
+### 10.2 View mode — เพิ่ม 3 คอลัมน์ใน table
 
 **Before:**
 ```jsx
@@ -1097,7 +1136,7 @@ setInitialData({
 
 ---
 
-### 9.3 View mode — แก้ summary section
+### 10.3 View mode — แก้ summary section
 
 **Before:**
 ```jsx
