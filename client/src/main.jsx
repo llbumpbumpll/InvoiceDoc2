@@ -11,6 +11,8 @@ import CustomerPage from "./pages/customers/CustomerPage.jsx";
 import ProductList from "./pages/products/ProductList.jsx";
 import ProductPage from "./pages/products/ProductPage.jsx";
 import Reports from "./pages/reports/Reports.jsx";
+import SalesPersonList from "./pages/salesPersons/SalesPersonList.jsx";
+import SalesPersonPage from "./pages/salesPersons/SalesPersonPage.jsx";
 import { http } from "./api/http.js";
 import "./index.css";
 
@@ -75,6 +77,10 @@ function Sidebar() {
         <NavLink to="/products" className={getLinkClass}>
           <svg style={{ marginRight: 10 }} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
           Products
+        </NavLink>
+        <NavLink to="/sales-persons" className={getLinkClass}>
+          <svg style={{ marginRight: 10 }} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+          Sales Persons
         </NavLink>
         
         <SubMenu 
@@ -197,6 +203,10 @@ ReactDOM.createRoot(document.getElementById("root")).render(
         <Route path="/products/new" element={<Layout><ProductPage mode="create" /></Layout>} />
         <Route path="/products/:id" element={<Layout><ProductPage mode="view" /></Layout>} />
         <Route path="/products/:id/edit" element={<Layout><ProductPage mode="edit" /></Layout>} />
+        <Route path="/sales-persons" element={<Layout><SalesPersonList /></Layout>} />
+        <Route path="/sales-persons/new" element={<Layout><SalesPersonPage mode="create" /></Layout>} />
+        <Route path="/sales-persons/:code" element={<Layout><SalesPersonPage mode="view" /></Layout>} />
+        <Route path="/sales-persons/:code/edit" element={<Layout><SalesPersonPage mode="edit" /></Layout>} />
         <Route path="/reports" element={<Navigate to="/reports/product-sales" replace />} />
         <Route path="/reports/product-sales" element={<Layout><Reports type="product-sales" /></Layout>} />
         <Route path="/reports/monthly-sales" element={<Layout><Reports type="monthly-sales" /></Layout>} />
