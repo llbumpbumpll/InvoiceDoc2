@@ -546,6 +546,8 @@ PUT    http://localhost:4000/api/receipts/RCT26-00001   body: { ... }
 DELETE http://localhost:4000/api/receipts/RCT26-00001
 ```
 
+> ⚠️ **ยังทดสอบ API ไม่ได้ในขั้นตอนนี้** — ต้องทำ **Step 4 (Mount routes ใน app.js) ให้เสร็จก่อน** แล้วค่อยกลับมาทดสอบที่นี่
+
 ---
 
 ## Step 3 — Server: Receipt Reports API (3 ไฟล์)
@@ -735,6 +737,8 @@ GET http://localhost:4000/api/receipt-reports/receipt-list?date_from=2026-01-01&
 GET http://localhost:4000/api/receipt-reports/invoice-receipt
 ```
 
+> ⚠️ **ยังทดสอบ API ไม่ได้ในขั้นตอนนี้** — ต้องทำ **Step 4 (Mount routes ใน app.js) ให้เสร็จก่อน** แล้วค่อยกลับมาทดสอบที่นี่
+
 ---
 
 ## Step 4 — Mount routes ใหม่ใน app.js
@@ -768,6 +772,8 @@ app.use("/api/reports", reportsRoutes);
 app.use("/api/____________", ____________);     -- receipts, receiptsRoutes
 app.use("/api/____________", ____________);     -- receipt-reports, receiptReportsRoutes
 ```
+
+> ✅ **ตอนนี้กลับไปทดสอบ API ของ Step 2 และ Step 3 ได้แล้ว** โดยใช้ URL ที่ระบุไว้ใน ### ทดสอบ ของแต่ละ step
 
 ---
 

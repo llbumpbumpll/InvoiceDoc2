@@ -547,6 +547,8 @@ PUT    http://localhost:4000/api/receipts/RCT26-00001   body: { ... }
 DELETE http://localhost:4000/api/receipts/RCT26-00001
 ```
 
+> ⚠️ **You cannot test the API yet** — complete **Step 4 (Mount routes in app.js) first**, then come back to test here.
+
 ---
 
 ## Step 3 — Server: Receipt Reports API (3 files)
@@ -737,6 +739,8 @@ GET http://localhost:4000/api/receipt-reports/receipt-list?date_from=2026-01-01&
 GET http://localhost:4000/api/receipt-reports/invoice-receipt
 ```
 
+> ⚠️ **You cannot test the API yet** — complete **Step 4 (Mount routes in app.js) first**, then come back to test here.
+
 ---
 
 ## Step 4 — Mount new routes in app.js
@@ -770,6 +774,8 @@ app.use("/api/reports", reportsRoutes);
 app.use("/api/____________", ____________);     // receipts, receiptsRoutes
 app.use("/api/____________", ____________);     // receipt-reports, receiptReportsRoutes
 ```
+
+> ✅ **Now go back and test the APIs from Step 2 and Step 3** using the URLs listed in the ### Test section of each step.
 
 ---
 
