@@ -15,6 +15,7 @@
 | 3 | Server: Receipt Reports API | `server/src/services/receiptReports.service.js` + controller + routes |
 | 4 | Mount routes ใน app.js | `server/src/app.js` |
 | 5 | Client: Receipts API file | `client/src/api/receipts.api.js` |
+| 5.5 | Client: Receipt Reports API file | `client/src/api/receiptReports.api.js` |
 | 6 | Client: Receipt Pages | `ReceiptList.jsx` + `ReceiptPage.jsx` + `InvoicePickerModal.jsx` |
 | 7 | Client: Receipt Reports page | `client/src/pages/reports/ReceiptReports.jsx` |
 | 8 | Wire up routes + nav | `client/src/main.jsx` |
@@ -839,6 +840,40 @@ export async function listUnpaidInvoices(customerCode, receiptNo = null) {
 
 ---
 
+## Step 5.5 — Client: Receipt Reports API file
+
+**ไฟล์ใหม่:** `client/src/api/receiptReports.api.js`
+
+```js
+import { http } from "./http.js";
+
+function unwrap(res) {
+  if (res && res.success === false && res.error) throw new Error(res.error.message);
+  return res;
+}
+
+// filter null/empty ออกก่อนสร้าง query string
+function buildQuery(params) {
+  return new URLSearchParams(
+    Object.fromEntries(Object.entries(params).filter(([, v]) => v != null && v !== "")),
+  ).toString();
+}
+
+export async function fetchReceiptList(____________) {   -- params
+  const q = ____________(params);   -- buildQuery
+  const res = unwrap(await http(`/api/receipt-reports/____________${q ? `?${q}` : ""}`));   -- receipt-list
+  return { data: res.data, ...(res.____________ || {}) };   -- meta
+}
+
+export async function fetchInvoiceReceiptReport(____________) {   -- params
+  const q = ____________(params);   -- buildQuery
+  const res = unwrap(await http(`/api/receipt-reports/____________${q ? `?${q}` : ""}`));   -- invoice-receipt
+  return { data: res.data, ...(res.____________ || {}) };   -- meta
+}
+```
+
+---
+
 ## Step 6 — Client: Receipt Pages (3 ไฟล์ใหม่)
 
 ### 6.1 ReceiptList.jsx
@@ -1581,28 +1616,10 @@ export default function ReceiptPage({ mode: propMode }) {
 ```jsx
 import React from "react";
 import { toast } from "react-toastify";
-import { http } from "../../api/http.js";
 import { formatBaht, formatDate } from "../../utils.js";
 import { TableLoading } from "../../components/Loading.jsx";
-
-// ถ้า server ส่ง {success: false, error: ...} ให้ throw error แทน return ปกติ
-function unwrap(res) {
-  if (res && res.success === false && res.error) throw new Error(res.error.message);
-  return res;
-}
-
-// filter null/empty ออกก่อนสร้าง query string เพื่อไม่ให้ส่ง ?date_from=&customer_code= ไปโดยไม่จำเป็น
-async function fetchReceiptList(params) {
-  const q = new URLSearchParams(Object.fromEntries(Object.entries(params).filter(([, v]) => v != null && v !== ""))).toString();
-  const res = unwrap(await http(`/api/receipt-reports/____________${q ? `?${q}` : ""}`));   -- receipt-list
-  return { data: res.data, ...(res.____________ || {}) };   -- meta
-}
-
-async function fetchInvoiceReceiptReport(params) {
-  const q = new URLSearchParams(Object.fromEntries(Object.entries(params).filter(([, v]) => v != null && v !== ""))).toString();
-  const res = unwrap(await http(`/api/receipt-reports/____________${q ? `?${q}` : ""}`));   -- invoice-receipt
-  return { data: res.data, ...(res.____________ || {}) };   -- meta
-}
+// import ฟังก์ชัน fetch จาก api file ที่สร้างไว้ใน Step 5.5
+import { ____________, ____________ } from "../../api/receiptReports.api.js";   -- fetchReceiptList, fetchInvoiceReceiptReport
 
 // TABS กำหนดว่ามีกี่ tab และ key ต้องตรงกับ conditional render ด้านล่าง
 const TABS = [
