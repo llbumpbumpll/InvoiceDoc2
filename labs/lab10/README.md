@@ -29,33 +29,40 @@
 
 ```sql
 -- FILE: database/sql/005_invoice_lab4_delta.sql
-\set ON_ERROR_STOP on
+\set ON_ERROR_STOP on  -- หยุดทันทีถ้า SQL มี error ป้องกัน script รันต่อไปแบบผิดๆ
 ```
 
 ### 1.1 Table: receipt (header)
+
+> **receipt** เก็บข้อมูลหัวใบเสร็จ 1 แถว = 1 การรับชำระเงิน 1 ครั้ง
+> 1 receipt รับเงินได้หลาย invoice พร้อมกัน (เก็บ line items แยกใน receipt_line_item)
 
 ```sql
 CREATE TABLE IF NOT EXISTS receipt (
   id               bigint primary key,
   created_at       timestamptz not null default now(),
-  receipt_no       text unique not null,
-  receipt_date     ____________ not null,                              -- date
-  customer_id      bigint not null references ____________(id),       -- customer
-  payment_method   text not null default 'cash',  -- cash | bank transfer | check
-  payment_notes    text,
-  total_received   numeric(14,2) not null default 0.00
+  receipt_no       text unique not null,              -- เลข RCT26-XXXXX auto-generate โดย service
+  receipt_date     ____________ not null,             -- date: วันที่รับเงิน
+  customer_id      bigint not null references ____________(id),  -- customer: ลูกค้าที่จ่ายเงิน
+  payment_method   text not null default 'cash',      -- cash | bank transfer | check
+  payment_notes    text,                              -- หมายเหตุการชำระ (optional)
+  total_received   numeric(14,2) not null default 0.00  -- ผลรวมของ line items ทุกแถว
 );
 ```
 
 ### 1.2 Table: receipt_line_item
 
+> **receipt_line_item** เก็บรายละเอียดว่า receipt นี้จ่ายให้ invoice ใด จำนวนเท่าไหร่
+> 1 receipt มีได้หลาย line items (1 แถวต่อ 1 invoice ที่ถูกชำระ)
+
 ```sql
 CREATE TABLE IF NOT EXISTS receipt_line_item (
   id               bigint primary key,
   created_at       timestamptz not null default now(),
-  receipt_id       bigint not null references ____________(id) on delete cascade,   -- receipt
-  invoice_id       bigint not null references ____________(id),                     -- invoice
-  amount_received  numeric(14,2) not null default 0.00
+  receipt_id       bigint not null references ____________(id) on delete cascade,
+  -- receipt: on delete cascade = ลบ receipt แล้ว line items ลบตามอัตโนมัติ
+  invoice_id       bigint not null references ____________(id),  -- invoice: invoice ที่ถูกชำระ
+  amount_received  numeric(14,2) not null default 0.00           -- จำนวนเงินที่รับในใบเสร็จนี้
 );
 ```
 
@@ -72,13 +79,18 @@ SELECT
   c.id                                                          AS customer_id,
   i.id                                                          AS invoice_id,
   i.____________,                                               -- invoice_no
-  i.____________,                                               -- amount_due
-  COALESCE(SUM(rli.____________), 0)                            AS amount_received,   -- amount_received (field ใน receipt_line_item)
-  i.amount_due - COALESCE(SUM(rli.____________), 0)             AS amount_remain       -- amount_received (field ใน receipt_line_item)
+  i.____________,                                               -- amount_due: ยอดรวมทั้งหมดของ invoice
+  COALESCE(SUM(rli.____________), 0)                            AS amount_received,
+  -- SUM รวมเงินจากทุก receipt ที่จ่ายให้ invoice นี้
+  -- COALESCE(..., 0) เพราะ LEFT JOIN จะได้ NULL ถ้ายังไม่มีการรับเงินเลย
+  i.amount_due - COALESCE(SUM(rli.____________), 0)             AS amount_remain
+  -- amount_remain = ยอดรวม - รับไปแล้ว = ยังค้างอยู่
 FROM invoice i
-JOIN customer c ON c.id = i.____________                            -- customer_id
-LEFT JOIN receipt_line_item rli ON rli.____________ = i.____________ -- invoice_id, id
+JOIN customer c ON c.id = i.____________                              -- customer_id
+LEFT JOIN receipt_line_item rli ON rli.____________ = i.____________  -- invoice_id, id
+-- LEFT JOIN: invoice ที่ยังไม่มี receipt จะได้ rli = NULL แต่ยังโชว์ใน view
 GROUP BY c.id, i.id, i.invoice_no, i.amount_due;
+-- GROUP BY เพื่อ aggregate SUM ต่อ invoice
 ```
 
 ### รันและตรวจสอบ
@@ -831,6 +843,9 @@ export async function listUnpaidInvoices(customerCode, receiptNo = null) {
 
 ### 6.1 ReceiptList.jsx
 
+> **หน้านี้ทำอะไร:** แสดงรายการ receipt ทั้งหมด มี search, sort, pagination, และปุ่ม Delete
+> ใช้ component `DataList` ที่มีอยู่แล้ว (เหมือนกับ InvoiceList) ไม่ต้องเขียน table เอง
+
 **ไฟล์ใหม่:** `client/src/pages/receipts/ReceiptList.jsx`
 
 ```jsx
@@ -842,9 +857,12 @@ import DataList from "../../components/DataList.jsx";
 import { ConfirmModal, AlertModal } from "../../components/Modal.jsx";
 
 export default function ReceiptList() {
+  // fetchData: DataList จะเรียก callback นี้ทุกครั้งที่ search/page/sort เปลี่ยน
   const fetchData = React.useCallback((params) => listReceipts(params), []);
+  // confirmModal.id เก็บ receiptNo ที่กำลังจะลบ
   const [confirmModal, setConfirmModal] = React.useState({ isOpen: false, id: null });
   const [alertModal, setAlertModal] = React.useState({ isOpen: false, message: "" });
+  // refreshTrigger: เพิ่มค่าทุกครั้งที่ลบสำเร็จ → DataList จะ fetch ใหม่อัตโนมัติ
   const [refreshTrigger, setRefreshTrigger] = React.useState(0);
 
   const closeConfirm = () => setConfirmModal({ isOpen: false, id: null });
@@ -914,11 +932,15 @@ export default function ReceiptList() {
 
 ### 6.2 InvoicePickerModal.jsx
 
+> **หน้านี้ทำอะไร:** Modal สำหรับเลือก invoice ใน receipt form
+> - แสดงเฉพาะ invoice ที่ยังค้างชำระ (amount_remain > 0) ของ customer ที่เลือกไว้
+> - `excludeReceiptNo`: ตอน edit receipt ต้องส่ง receipt ปัจจุบันมาด้วย เพื่อให้ invoice ที่อยู่ใน receipt นี้โชว์ขึ้นมาได้ (ไม่งั้นจะหายไปเพราะถูกนับว่าจ่ายแล้ว)
+
 **ไฟล์ใหม่:** `client/src/pages/receipts/InvoicePickerModal.jsx`
 
 ```jsx
 import React from "react";
-import { createPortal } from "react-dom";
+import { createPortal } from "react-dom";  // render modal ไว้ที่ document.body แทน parent element
 import { listUnpaidInvoices } from "../../api/receipts.api.js";
 import { formatBaht, formatDate } from "../../utils.js";
 import { TableLoading } from "../../components/Loading.jsx";
@@ -929,15 +951,16 @@ export default function InvoicePickerModal({ isOpen, onClose, onSelect, customer
   const [err, setErr] = React.useState("");
 
   React.useEffect(() => {
+    // ถ้า modal ปิดอยู่ หรือยังไม่ได้เลือก customer → ไม่ต้องโหลด
     if (!isOpen || !____________) { setData([]); return; }   -- customerCode
-    let cancelled = false;
+    let cancelled = false;  // ป้องกัน state update หลัง component unmount
     setLoading(true);
     setErr("");
     listUnpaidInvoices(____________, excludeReceiptNo || null)   -- customerCode
       .then((rows) => { if (!cancelled) setData(rows); })
       .catch((e) => { if (!cancelled) setErr(String(e.message || e)); })
       .finally(() => { if (!cancelled) setLoading(false); });
-    return () => { cancelled = true; };
+    return () => { cancelled = true; };  // cleanup: ยกเลิก async ถ้า modal ปิดก่อน fetch เสร็จ
   }, [isOpen, ____________, excludeReceiptNo]);   -- customerCode
 
   if (!isOpen) return null;
@@ -1030,6 +1053,21 @@ export default function InvoicePickerModal({ isOpen, onClose, onSelect, customer
 
 ### 6.3 ReceiptPage.jsx
 
+> **หน้านี้ทำอะไร:** Form สำหรับสร้าง/แก้ไข/ดู Receipt — ใช้ 1 component ทำได้ 3 mode
+>
+> | mode | URL | ทำอะไร |
+> |------|-----|--------|
+> | `create` | `/receipts/new` | กรอกข้อมูลใหม่ |
+> | `edit` | `/receipts/:receiptNo/edit` | โหลดข้อมูลเดิมมาแก้ไข |
+> | `view` | `/receipts/:receiptNo` | แสดงข้อมูล + ปุ่ม Print |
+>
+> **แต่ละ column ใน line items:**
+> - **Amount Due** = ยอดรวมทั้งหมดของ invoice
+> - **Already Received** = รับไปแล้วจาก receipt *อื่น* (ไม่นับอันนี้)
+> - **Remaining** = Amount Due - Already Received
+> - **Amount Received Here** = กรอกได้เอง (default = Remaining ทั้งหมด)
+> - **Still Remaining** = Remaining - Amount Received Here
+
 **ไฟล์ใหม่:** `client/src/pages/receipts/ReceiptPage.jsx`
 
 ```jsx
@@ -1046,34 +1084,40 @@ import { AlertModal } from "../../components/Modal.jsx";
 
 const PAYMENT_METHODS = ["cash", "bank transfer", "check"];
 
+// template สำหรับ line item ใหม่ที่ยังไม่ได้กรอก
 function emptyLine() {
   return { invoice_no: "", amount_due: 0, amount_already_received: 0, amount_remain: 0, amount_received: 0 };
 }
 
 export default function ReceiptPage({ mode: propMode }) {
   const { receiptNo } = useParams();
+  // propMode มาจาก Route (mode="create"/"edit"/"view") ถ้าไม่มีก็ detect จาก URL
   const mode = propMode || (receiptNo ? "view" : "create");
   const nav = useNavigate();
 
-  const [autoNo, setAutoNo] = React.useState(true);
+  // ── Header state ──────────────────────────────────────────
+  const [autoNo, setAutoNo] = React.useState(true);           // true = ให้ระบบ generate เลข RCT
   const [receiptNoInput, setReceiptNoInput] = React.useState("");
   const [receiptDate, setReceiptDate] = React.useState(new Date().toISOString().slice(0, 10));
   const [customerCode, setCustomerCode] = React.useState("");
-  const [customerName, setCustomerName] = React.useState("");
+  const [customerName, setCustomerName] = React.useState("");  // โหลดอัตโนมัติจาก customerCode
   const [paymentMethod, setPaymentMethod] = React.useState("cash");
   const [paymentNotes, setPaymentNotes] = React.useState("");
+  // ── Line items ────────────────────────────────────────────
   const [lines, setLines] = React.useState([emptyLine()]);
-
+  // ── UI state ──────────────────────────────────────────────
   const [loading, setLoading] = React.useState(true);
   const [submitting, setSubmitting] = React.useState(false);
   const [err, setErr] = React.useState("");
   const [customerModalOpen, setCustomerModalOpen] = React.useState(false);
   const [customerLoadError, setCustomerLoadError] = React.useState("");
   const [invoicePickerOpen, setInvoicePickerOpen] = React.useState(false);
-  const [invoicePickerLineIdx, setInvoicePickerLineIdx] = React.useState(null);
+  const [invoicePickerLineIdx, setInvoicePickerLineIdx] = React.useState(null);  // บรรทัดไหนที่กด LoV
   const [alertModal, setAlertModal] = React.useState({ isOpen: false, title: "", message: "" });
+  // ── View mode data ────────────────────────────────────────
   const [viewData, setViewData] = React.useState(null);
 
+  // โหลดชื่อ customer อัตโนมัติเมื่อ customerCode เปลี่ยน
   React.useEffect(() => {
     const code = String(____________ || "").trim();   -- customerCode
     if (!code) { setCustomerName(""); setCustomerLoadError(""); return; }
@@ -1085,6 +1129,7 @@ export default function ReceiptPage({ mode: propMode }) {
     return () => { cancelled = true; };
   }, [____________]);   -- customerCode
 
+  // โหลดข้อมูล receipt เดิม สำหรับ edit/view mode
   React.useEffect(() => {
     if (mode === "create") { setLoading(false); return; }
     setLoading(true);
@@ -1093,6 +1138,7 @@ export default function ReceiptPage({ mode: propMode }) {
         if (!data) { setErr("Receipt not found"); setLoading(false); return; }
         setViewData(data);
         if (mode === "edit") {
+          // map ข้อมูลจาก API กลับเข้า state ของ form
           const h = data.____________;   -- header
           setReceiptNoInput(h.receipt_no);
           setReceiptDate(h.receipt_date ? new Date(h.receipt_date).toISOString().slice(0, 10) : "");
@@ -1104,6 +1150,7 @@ export default function ReceiptPage({ mode: propMode }) {
               invoice_no: li.____________,   -- invoice_no
               amount_due: Number(li.____________ || 0),   -- amount_due
               amount_already_received: Number(li.____________ || 0),   -- amount_already_received
+              // amount_remain_before_this = ยอดค้างก่อนที่ receipt นี้จะจ่าย (exclude ตัวเอง)
               amount_remain: Number(li.____________ ?? li.amount_remain ?? 0),   -- amount_remain_before_this
               amount_received: Number(li.____________ || 0),   -- amount_received
             })),
@@ -1114,22 +1161,25 @@ export default function ReceiptPage({ mode: propMode }) {
       .catch((e) => { setErr(String(e.message || e)); setLoading(false); });
   }, [receiptNo, mode]);
 
+  // คำนวณ Total Received จาก line items ทั้งหมด (แสดงใน summary card)
   const totalReceived = lines.reduce((s, l) => s + Number(l.____________ || 0), 0);   -- amount_received
 
   function openInvoicePicker(idx) {
-    setInvoicePickerLineIdx(idx);
+    setInvoicePickerLineIdx(idx);  // จำไว้ว่ากด LoV บรรทัดที่เท่าไหร่
     setInvoicePickerOpen(true);
   }
 
+  // เมื่อเลือก invoice จาก LoV → เติมข้อมูลทั้ง row อัตโนมัติ
   function handleInvoiceSelect(row) {
     setLines((prev) => {
       const next = [...prev];
       next[invoicePickerLineIdx] = {
         invoice_no: row.____________,   -- invoice_no
         amount_due: Number(row.____________ || 0),   -- amount_due
-        amount_already_received: Number(row.____________ || 0),   -- amount_received
+        amount_already_received: Number(row.____________ || 0),   -- amount_received (จาก receipt อื่น)
         amount_remain: Number(row.____________ || 0),   -- amount_remain
-        amount_received: Number(row.____________ || 0),   -- amount_remain (default = จ่ายเต็มที่เหลือ)
+        // default amount_received = amount_remain (จ่ายเต็มยอดที่เหลือ)
+        amount_received: Number(row.____________ || 0),   -- amount_remain
       };
       return next;
     });
@@ -1137,7 +1187,7 @@ export default function ReceiptPage({ mode: propMode }) {
 
   function handleCustomerChange(code) {
     setCustomerCode(code);
-    setLines([emptyLine()]);   // เคลียร์ line items เมื่อเปลี่ยน customer
+    setLines([emptyLine()]);   // เคลียร์ line items เมื่อเปลี่ยน customer เพื่อป้องกัน invoice ค้างจาก customer เดิม
   }
 
   function updateLine(idx, field, value) {
@@ -1151,6 +1201,7 @@ export default function ReceiptPage({ mode: propMode }) {
   function addLine() { setLines((prev) => [...prev, emptyLine()]); }
   function removeLine(idx) { setLines((prev) => prev.filter((_, i) => i !== idx)); }
 
+  // ตรวจสอบความถูกต้องก่อน submit: คืน array ของ error messages
   function validate() {
     const errs = [];
     if (!receiptDate) errs.push("Receipt Date is required");
@@ -1162,6 +1213,7 @@ export default function ReceiptPage({ mode: propMode }) {
       const amt = Number(l.____________);   -- amount_received
       if (isNaN(amt) || amt <= 0) errs.push(`Row ${i + 1}: Amount Received must be a positive number`);
     });
+    // ตรวจ invoice ซ้ำใน receipt เดียวกัน
     const nos = lines.map((l) => l.invoice_no).filter(Boolean);
     const dups = nos.filter((n, i) => nos.indexOf(n) !== i);
     if (dups.length > 0) errs.push(`Duplicate invoice(s): ${[...new Set(dups)].join(", ")}`);
@@ -1172,6 +1224,7 @@ export default function ReceiptPage({ mode: propMode }) {
     e.preventDefault();
     const errors = validate();
     if (errors.length > 0) {
+      // แสดง error ทั้งหมดใน AlertModal เป็น list
       setAlertModal({
         isOpen: true, title: "Save Failed",
         message: (<ul style={{ margin: 0, paddingLeft: 20 }}>{errors.map((msg, i) => <li key={i}>{msg}</li>)}</ul>),
@@ -1181,11 +1234,13 @@ export default function ReceiptPage({ mode: propMode }) {
     setErr(""); setSubmitting(true);
     try {
       const payload = {
+        // ถ้า autoNo = true → ส่ง "" ให้ service generate เอง; ถ้าไม่ → ส่งเลขที่พิมพ์
         receipt_no: mode === "create" ? (autoNo ? "" : receiptNoInput.trim()) : receiptNoInput.trim(),
         receipt_date: ____________,   -- receiptDate
         customer_code: ____________.trim(),   -- customerCode
         payment_method: ____________,   -- paymentMethod
         payment_notes: ____________ || "",   -- paymentNotes
+        // ส่งเฉพาะ invoice_no + amount_received ไป service (service จะ resolve เป็น id เอง)
         line_items: lines.map((l) => ({
           invoice_no: l.____________,   -- invoice_no
           amount_received: Number(l.____________),   -- amount_received
@@ -1195,11 +1250,11 @@ export default function ReceiptPage({ mode: propMode }) {
       if (mode === "create") {
         const res = await ____________(payload);   -- createReceipt
         toast.success("Receipt created.");
-        nav(`/receipts/${encodeURIComponent(res.____________)}`);   -- receipt_no
+        nav(`/receipts/${encodeURIComponent(res.____________)}`);   -- receipt_no (redirect ไป view mode)
       } else {
         await ____________(receiptNo, payload);   -- updateReceipt
         toast.success("Receipt updated.");
-        nav(`/receipts/${encodeURIComponent(____________)}`);   -- receiptNo
+        nav(`/receipts/${encodeURIComponent(____________)}`);   -- receiptNo (redirect ไป view mode)
       }
     } catch (e) {
       const msg = String(e.message || e);
@@ -1512,6 +1567,15 @@ export default function ReceiptPage({ mode: propMode }) {
 
 ## Step 7 — Client: Receipt Reports Page
 
+> **หน้านี้ทำอะไร:** หน้ารายงาน 2 ประเภทในไฟล์เดียวกัน สลับด้วย Tab
+>
+> | Tab | รายงาน | แสดงอะไร |
+> |-----|--------|---------|
+> | Receipt List | Report 1 | รายการ receipt ทั้งหมด สรุปยอดรับต่อใบ |
+> | Invoice & Receipt | Report 2 | รายการ invoice พร้อมประวัติการรับเงินแต่ละครั้ง (1 แถวต่อ 1 receipt) |
+>
+> filter ทุกตัวเป็น optional — ไม่ใส่ = ดึงทั้งหมด
+
 **ไฟล์ใหม่:** `client/src/pages/reports/ReceiptReports.jsx`
 
 ```jsx
@@ -1521,11 +1585,13 @@ import { http } from "../../api/http.js";
 import { formatBaht, formatDate } from "../../utils.js";
 import { TableLoading } from "../../components/Loading.jsx";
 
+// ถ้า server ส่ง {success: false, error: ...} ให้ throw error แทน return ปกติ
 function unwrap(res) {
   if (res && res.success === false && res.error) throw new Error(res.error.message);
   return res;
 }
 
+// filter null/empty ออกก่อนสร้าง query string เพื่อไม่ให้ส่ง ?date_from=&customer_code= ไปโดยไม่จำเป็น
 async function fetchReceiptList(params) {
   const q = new URLSearchParams(Object.fromEntries(Object.entries(params).filter(([, v]) => v != null && v !== ""))).toString();
   const res = unwrap(await http(`/api/receipt-reports/____________${q ? `?${q}` : ""}`));   -- receipt-list
@@ -1538,11 +1604,13 @@ async function fetchInvoiceReceiptReport(params) {
   return { data: res.data, ...(res.____________ || {}) };   -- meta
 }
 
+// TABS กำหนดว่ามีกี่ tab และ key ต้องตรงกับ conditional render ด้านล่าง
 const TABS = [
   { key: "receipt-list", label: "Receipt List" },
   { key: "invoice-receipt", label: "Invoice & Receipt" },
 ];
 
+// FilterBar: shared component ใช้กับทั้ง 2 report — filters คือ object ของ filter ทั้งหมด
 function FilterBar({ filters, onChange, onRun, loading }) {
   return (
     <div className="card" style={{ marginBottom: 20 }}>
@@ -1575,12 +1643,13 @@ function FilterBar({ filters, onChange, onRun, loading }) {
   );
 }
 
+// Report 1: แสดง receipt แต่ละใบ พร้อม Grand Total ด้านล่าง
 function ReceiptListReport() {
   const [filters, setFilters] = React.useState({});
   const [data, setData] = React.useState([]);
   const [total, setTotal] = React.useState(0);
   const [loading, setLoading] = React.useState(false);
-  const [hasRun, setHasRun] = React.useState(false);
+  const [hasRun, setHasRun] = React.useState(false);  // ซ่อนตารางไว้จนกว่าจะกด Run ครั้งแรก
 
   async function run() {
     setLoading(true);
@@ -1646,6 +1715,8 @@ function ReceiptListReport() {
   );
 }
 
+// Report 2: แสดง invoice แต่ละใบพร้อมรายการรับเงิน — 1 แถวต่อ 1 receipt ที่จ่ายให้ invoice นั้น
+// invoice ที่ยังไม่เคยรับเงินเลยจะโชว์ 1 แถว โดย receipt fields เป็น null (แสดงเป็น "-")
 function InvoiceReceiptReport() {
   const [filters, setFilters] = React.useState({});
   const [data, setData] = React.useState([]);

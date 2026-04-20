@@ -833,6 +833,9 @@ export async function listUnpaidInvoices(customerCode, receiptNo = null) {
 
 ### 6.1 ReceiptList.jsx
 
+> **What this page does:** Shows all receipts with search, sort, pagination, and Delete button.
+> Uses the existing `DataList` component (same as InvoiceList) — no need to write a table from scratch.
+
 **New file:** `client/src/pages/receipts/ReceiptList.jsx`
 
 ```jsx
@@ -844,9 +847,12 @@ import DataList from "../../components/DataList.jsx";
 import { ConfirmModal, AlertModal } from "../../components/Modal.jsx";
 
 export default function ReceiptList() {
+  // fetchData: DataList calls this callback whenever search/page/sort changes
   const fetchData = React.useCallback((params) => listReceipts(params), []);
+  // confirmModal.id stores the receiptNo to delete
   const [confirmModal, setConfirmModal] = React.useState({ isOpen: false, id: null });
   const [alertModal, setAlertModal] = React.useState({ isOpen: false, message: "" });
+  // refreshTrigger: increment after successful delete → DataList auto re-fetches
   const [refreshTrigger, setRefreshTrigger] = React.useState(0);
 
   const closeConfirm = () => setConfirmModal({ isOpen: false, id: null });
@@ -916,11 +922,15 @@ export default function ReceiptList() {
 
 ### 6.2 InvoicePickerModal.jsx
 
+> **What this page does:** Modal for selecting an invoice inside the receipt form.
+> - Shows only invoices with outstanding balance (amount_remain > 0) for the selected customer.
+> - `excludeReceiptNo`: when editing a receipt, pass the current receipt number so invoices already in this receipt still appear in the list (otherwise they'd be hidden because they look "paid").
+
 **New file:** `client/src/pages/receipts/InvoicePickerModal.jsx`
 
 ```jsx
 import React from "react";
-import { createPortal } from "react-dom";
+import { createPortal } from "react-dom";  // renders modal at document.body, not inside parent element
 import { listUnpaidInvoices } from "../../api/receipts.api.js";
 import { formatBaht, formatDate } from "../../utils.js";
 import { TableLoading } from "../../components/Loading.jsx";
@@ -931,15 +941,16 @@ export default function InvoicePickerModal({ isOpen, onClose, onSelect, customer
   const [err, setErr] = React.useState("");
 
   React.useEffect(() => {
+    // if modal is closed or no customer selected → skip loading
     if (!isOpen || !____________) { setData([]); return; }   // customerCode
-    let cancelled = false;
+    let cancelled = false;  // prevents state update after component unmounts
     setLoading(true);
     setErr("");
     listUnpaidInvoices(____________, excludeReceiptNo || null)   // customerCode
       .then((rows) => { if (!cancelled) setData(rows); })
       .catch((e) => { if (!cancelled) setErr(String(e.message || e)); })
       .finally(() => { if (!cancelled) setLoading(false); });
-    return () => { cancelled = true; };
+    return () => { cancelled = true; };  // cleanup: cancel async if modal closes before fetch finishes
   }, [isOpen, ____________, excludeReceiptNo]);   // customerCode
 
   if (!isOpen) return null;
@@ -1032,6 +1043,21 @@ export default function InvoicePickerModal({ isOpen, onClose, onSelect, customer
 
 ### 6.3 ReceiptPage.jsx
 
+> **What this page does:** Form for create/edit/view a Receipt — one component handles all 3 modes.
+>
+> | mode | URL | Purpose |
+> |------|-----|---------|
+> | `create` | `/receipts/new` | Fill in new receipt |
+> | `edit` | `/receipts/:receiptNo/edit` | Load existing receipt and modify |
+> | `view` | `/receipts/:receiptNo` | Read-only display + Print button |
+>
+> **Line item columns explained:**
+> - **Amount Due** = total invoice amount
+> - **Already Received** = paid by *other* receipts (not this one)
+> - **Remaining** = Amount Due − Already Received
+> - **Amount Received Here** = editable (defaults to full Remaining)
+> - **Still Remaining** = Remaining − Amount Received Here
+
 **New file:** `client/src/pages/receipts/ReceiptPage.jsx`
 
 ```jsx
@@ -1048,34 +1074,40 @@ import { AlertModal } from "../../components/Modal.jsx";
 
 const PAYMENT_METHODS = ["cash", "bank transfer", "check"];
 
+// template for a new empty line item
 function emptyLine() {
   return { invoice_no: "", amount_due: 0, amount_already_received: 0, amount_remain: 0, amount_received: 0 };
 }
 
 export default function ReceiptPage({ mode: propMode }) {
   const { receiptNo } = useParams();
+  // propMode comes from Route (mode="create"/"edit"/"view"); fall back to URL detection
   const mode = propMode || (receiptNo ? "view" : "create");
   const nav = useNavigate();
 
-  const [autoNo, setAutoNo] = React.useState(true);
+  // ── Header state ──────────────────────────────────────────
+  const [autoNo, setAutoNo] = React.useState(true);           // true = let system generate RCT number
   const [receiptNoInput, setReceiptNoInput] = React.useState("");
   const [receiptDate, setReceiptDate] = React.useState(new Date().toISOString().slice(0, 10));
   const [customerCode, setCustomerCode] = React.useState("");
-  const [customerName, setCustomerName] = React.useState("");
+  const [customerName, setCustomerName] = React.useState("");  // auto-loaded from customerCode
   const [paymentMethod, setPaymentMethod] = React.useState("cash");
   const [paymentNotes, setPaymentNotes] = React.useState("");
+  // ── Line items ────────────────────────────────────────────
   const [lines, setLines] = React.useState([emptyLine()]);
-
+  // ── UI state ──────────────────────────────────────────────
   const [loading, setLoading] = React.useState(true);
   const [submitting, setSubmitting] = React.useState(false);
   const [err, setErr] = React.useState("");
   const [customerModalOpen, setCustomerModalOpen] = React.useState(false);
   const [customerLoadError, setCustomerLoadError] = React.useState("");
   const [invoicePickerOpen, setInvoicePickerOpen] = React.useState(false);
-  const [invoicePickerLineIdx, setInvoicePickerLineIdx] = React.useState(null);
+  const [invoicePickerLineIdx, setInvoicePickerLineIdx] = React.useState(null);  // which row opened the LoV
   const [alertModal, setAlertModal] = React.useState({ isOpen: false, title: "", message: "" });
+  // ── View mode data ────────────────────────────────────────
   const [viewData, setViewData] = React.useState(null);
 
+  // auto-load customer name whenever customerCode changes
   React.useEffect(() => {
     const code = String(____________ || "").trim();   // customerCode
     if (!code) { setCustomerName(""); setCustomerLoadError(""); return; }
@@ -1087,6 +1119,7 @@ export default function ReceiptPage({ mode: propMode }) {
     return () => { cancelled = true; };
   }, [____________]);   // customerCode
 
+  // load existing receipt data for edit/view mode
   React.useEffect(() => {
     if (mode === "create") { setLoading(false); return; }
     setLoading(true);
@@ -1095,6 +1128,7 @@ export default function ReceiptPage({ mode: propMode }) {
         if (!data) { setErr("Receipt not found"); setLoading(false); return; }
         setViewData(data);
         if (mode === "edit") {
+          // map API response back into form state
           const h = data.____________;   // header
           setReceiptNoInput(h.receipt_no);
           setReceiptDate(h.receipt_date ? new Date(h.receipt_date).toISOString().slice(0, 10) : "");
@@ -1106,6 +1140,7 @@ export default function ReceiptPage({ mode: propMode }) {
               invoice_no: li.____________,   // invoice_no
               amount_due: Number(li.____________ || 0),   // amount_due
               amount_already_received: Number(li.____________ || 0),   // amount_already_received
+              // amount_remain_before_this = balance before this receipt paid (excludes itself)
               amount_remain: Number(li.____________ ?? li.amount_remain ?? 0),   // amount_remain_before_this
               amount_received: Number(li.____________ || 0),   // amount_received
             })),
@@ -1116,22 +1151,25 @@ export default function ReceiptPage({ mode: propMode }) {
       .catch((e) => { setErr(String(e.message || e)); setLoading(false); });
   }, [receiptNo, mode]);
 
+  // sum all line items → shown in summary card and sent to API
   const totalReceived = lines.reduce((s, l) => s + Number(l.____________ || 0), 0);   // amount_received
 
   function openInvoicePicker(idx) {
-    setInvoicePickerLineIdx(idx);
+    setInvoicePickerLineIdx(idx);  // remember which row opened the LoV
     setInvoicePickerOpen(true);
   }
 
+  // when invoice is selected from LoV → auto-fill all 5 fields in that row
   function handleInvoiceSelect(row) {
     setLines((prev) => {
       const next = [...prev];
       next[invoicePickerLineIdx] = {
         invoice_no: row.____________,   // invoice_no
         amount_due: Number(row.____________ || 0),   // amount_due
-        amount_already_received: Number(row.____________ || 0),   // amount_received
+        amount_already_received: Number(row.____________ || 0),   // amount_received (from other receipts)
         amount_remain: Number(row.____________ || 0),   // amount_remain
-        amount_received: Number(row.____________ || 0),   // amount_remain (default = pay full remaining)
+        // default amount_received = amount_remain (pay full outstanding balance)
+        amount_received: Number(row.____________ || 0),   // amount_remain
       };
       return next;
     });
@@ -1139,7 +1177,7 @@ export default function ReceiptPage({ mode: propMode }) {
 
   function handleCustomerChange(code) {
     setCustomerCode(code);
-    setLines([emptyLine()]);   // clear line items when customer changes
+    setLines([emptyLine()]);   // clear lines when customer changes to avoid mixing invoices from different customers
   }
 
   function updateLine(idx, field, value) {
@@ -1153,6 +1191,7 @@ export default function ReceiptPage({ mode: propMode }) {
   function addLine() { setLines((prev) => [...prev, emptyLine()]); }
   function removeLine(idx) { setLines((prev) => prev.filter((_, i) => i !== idx)); }
 
+  // validates before submit — returns array of error messages (empty = valid)
   function validate() {
     const errs = [];
     if (!receiptDate) errs.push("Receipt Date is required");
@@ -1164,6 +1203,7 @@ export default function ReceiptPage({ mode: propMode }) {
       const amt = Number(l.____________);   // amount_received
       if (isNaN(amt) || amt <= 0) errs.push(`Row ${i + 1}: Amount Received must be a positive number`);
     });
+    // check for duplicate invoices in the same receipt
     const nos = lines.map((l) => l.invoice_no).filter(Boolean);
     const dups = nos.filter((n, i) => nos.indexOf(n) !== i);
     if (dups.length > 0) errs.push(`Duplicate invoice(s): ${[...new Set(dups)].join(", ")}`);
@@ -1174,6 +1214,7 @@ export default function ReceiptPage({ mode: propMode }) {
     e.preventDefault();
     const errors = validate();
     if (errors.length > 0) {
+      // show all errors in AlertModal as a list
       setAlertModal({
         isOpen: true, title: "Save Failed",
         message: (<ul style={{ margin: 0, paddingLeft: 20 }}>{errors.map((msg, i) => <li key={i}>{msg}</li>)}</ul>),
@@ -1183,11 +1224,13 @@ export default function ReceiptPage({ mode: propMode }) {
     setErr(""); setSubmitting(true);
     try {
       const payload = {
+        // if autoNo = true → send "" so service generates the number; otherwise use typed value
         receipt_no: mode === "create" ? (autoNo ? "" : receiptNoInput.trim()) : receiptNoInput.trim(),
         receipt_date: ____________,   // receiptDate
         customer_code: ____________.trim(),   // customerCode
         payment_method: ____________,   // paymentMethod
         payment_notes: ____________ || "",   // paymentNotes
+        // send only invoice_no + amount_received; service resolves to invoice_id internally
         line_items: lines.map((l) => ({
           invoice_no: l.____________,   // invoice_no
           amount_received: Number(l.____________),   // amount_received
@@ -1197,11 +1240,11 @@ export default function ReceiptPage({ mode: propMode }) {
       if (mode === "create") {
         const res = await ____________(payload);   // createReceipt
         toast.success("Receipt created.");
-        nav(`/receipts/${encodeURIComponent(res.____________)}`);   // receipt_no
+        nav(`/receipts/${encodeURIComponent(res.____________)}`);   // receipt_no → redirect to view mode
       } else {
         await ____________(receiptNo, payload);   // updateReceipt
         toast.success("Receipt updated.");
-        nav(`/receipts/${encodeURIComponent(____________)}`);   // receiptNo
+        nav(`/receipts/${encodeURIComponent(____________)}`);   // receiptNo → redirect to view mode
       }
     } catch (e) {
       const msg = String(e.message || e);
@@ -1514,6 +1557,15 @@ export default function ReceiptPage({ mode: propMode }) {
 
 ## Step 7 — Client: Receipt Reports Page
 
+> **What this page does:** Two reports in one file, switched by Tab.
+>
+> | Tab | Report | Shows |
+> |-----|--------|-------|
+> | Receipt List | Report 1 | All receipts with total received per receipt |
+> | Invoice & Receipt | Report 2 | Each invoice with payment history — one row per receipt |
+>
+> All filters are optional — leave blank to show everything.
+
 **New file:** `client/src/pages/reports/ReceiptReports.jsx`
 
 ```jsx
@@ -1523,11 +1575,13 @@ import { http } from "../../api/http.js";
 import { formatBaht, formatDate } from "../../utils.js";
 import { TableLoading } from "../../components/Loading.jsx";
 
+// if server returns {success: false, error: ...}, throw instead of returning normally
 function unwrap(res) {
   if (res && res.success === false && res.error) throw new Error(res.error.message);
   return res;
 }
 
+// strip null/empty values before building query string to avoid sending ?date_from=&customer_code=
 async function fetchReceiptList(params) {
   const q = new URLSearchParams(Object.fromEntries(Object.entries(params).filter(([, v]) => v != null && v !== ""))).toString();
   const res = unwrap(await http(`/api/receipt-reports/____________${q ? `?${q}` : ""}`));   // receipt-list
@@ -1540,11 +1594,13 @@ async function fetchInvoiceReceiptReport(params) {
   return { data: res.data, ...(res.____________ || {}) };   // meta
 }
 
+// TABS defines tab labels and keys — key must match the conditional render at the bottom
 const TABS = [
   { key: "receipt-list", label: "Receipt List" },
   { key: "invoice-receipt", label: "Invoice & Receipt" },
 ];
 
+// FilterBar: shared filter UI used by both reports
 function FilterBar({ filters, onChange, onRun, loading }) {
   return (
     <div className="card" style={{ marginBottom: 20 }}>
@@ -1577,12 +1633,13 @@ function FilterBar({ filters, onChange, onRun, loading }) {
   );
 }
 
+// Report 1: one row per receipt with Grand Total footer
 function ReceiptListReport() {
   const [filters, setFilters] = React.useState({});
   const [data, setData] = React.useState([]);
   const [total, setTotal] = React.useState(0);
   const [loading, setLoading] = React.useState(false);
-  const [hasRun, setHasRun] = React.useState(false);
+  const [hasRun, setHasRun] = React.useState(false);  // hides table until Run is clicked at least once
 
   async function run() {
     setLoading(true);
@@ -1654,6 +1711,7 @@ function ReceiptListReport() {
   );
 }
 
+// Report 2: one row per receipt per invoice — invoices with no receipts appear with NULL receipt fields (shown as "-")
 function InvoiceReceiptReport() {
   const [filters, setFilters] = React.useState({});
   const [data, setData] = React.useState([]);
