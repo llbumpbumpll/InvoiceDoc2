@@ -541,6 +541,25 @@ button {
   body {
     background-color: white !important;
   }
+
+  .table-container {
+    overflow: visible !important;
+  }
+
+  table {
+    width: 100% !important;
+    table-layout: auto !important;
+  }
+
+  th, td {
+    font-size: 0.75rem !important;
+    padding: 4px 6px !important;
+    white-space: nowrap;
+  }
+
+  .invoice-preview {
+    width: 100% !important;
+  }
 }
 
 .text-right {
