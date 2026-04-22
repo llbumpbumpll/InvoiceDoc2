@@ -46,10 +46,34 @@ export default function ReportFilters({ type, filters, onChange, onApply, onRese
           <>
             <ProductFilter value={filters.productCode || ""} displayLabel={filters.productLabel} onChange={handleChange} />
             <CustomerFilter value={filters.customerCode || ""} displayLabel={filters.customerLabel} onChange={handleChange} />
-            <DateRangeFilter 
-              dateFrom={filters.dateFrom || ""} 
-              dateTo={filters.dateTo || ""} 
-              onChange={handleChange} 
+            <DateRangeFilter
+              dateFrom={filters.dateFrom || ""}
+              dateTo={filters.dateTo || ""}
+              onChange={handleChange}
+            />
+          </>
+        )}
+
+        {/* Lab 4 — List of Receipts: date range + customer (both optional) */}
+        {type === "receipt-list" && (
+          <>
+            <CustomerFilter value={filters.customerCode || ""} displayLabel={filters.customerLabel} onChange={handleChange} />
+            <DateRangeFilter
+              dateFrom={filters.dateFrom || ""}
+              dateTo={filters.dateTo || ""}
+              onChange={handleChange}
+            />
+          </>
+        )}
+
+        {/* Lab 4 — Invoices + Receipts: invoice date range + customer */}
+        {type === "invoice-receipts" && (
+          <>
+            <CustomerFilter value={filters.customerCode || ""} displayLabel={filters.customerLabel} onChange={handleChange} />
+            <DateRangeFilter
+              dateFrom={filters.dateFrom || ""}
+              dateTo={filters.dateTo || ""}
+              onChange={handleChange}
             />
           </>
         )}

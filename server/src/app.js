@@ -7,10 +7,13 @@ import fs from "fs";
 
 import logger from "./utils/logger.js";
 import invoicesRoutes from "./routes/invoices.routes.js";
+import paymentsRoutes from "./routes/payments.routes.js";
 import reportsRoutes from "./routes/reports.routes.js";
 import customersRoutes from "./routes/customers.routes.js";
 import productsRoutes from "./routes/products.routes.js";
 import salesPersonsRoutes from "./routes/salesPersons.routes.js";
+import configurationRoutes from "./routes/configuration.routes.js";
+import receiptsRoutes from "./routes/receipts.routes.js";
 
 const app = express();
 
@@ -120,7 +123,10 @@ app.get("/api/updates-check", async (_, res) => {
 app.use("/api/customers", customersRoutes);
 app.use("/api/products", productsRoutes);
 app.use("/api/invoices", invoicesRoutes);
+app.use("/api/payments", paymentsRoutes);
 app.use("/api/sales-persons", salesPersonsRoutes);
+app.use("/api/configuration", configurationRoutes);
+app.use("/api/receipts", receiptsRoutes);
 app.use("/api/reports", reportsRoutes);
 
 const port = process.env.PORT || 4000;

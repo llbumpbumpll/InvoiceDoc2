@@ -1,4 +1,3 @@
-// Sales person CRUD: list (search, pagination) and get by code.
 import { pool } from "../db/pool.js";
 
 export async function listSalesPersons({
@@ -33,3 +32,46 @@ export async function listSalesPersons({
   };
 }
 
+export async function getSalesPersonByCode(code) {
+  if (!code || String(code).trim() === "") return null;
+  const { rows } = await pool.query(
+    `SELECT code, name, start_work_date, created_at
+     FROM sales_person
+     WHERE code = $1`,
+    [String(code).trim()],
+  );
+  return rows[0] ?? null;
+}
+
+export async function createSalesPerson({ code, name, start_work_date } = {}) {
+  let resolvedCode = code;
+
+  if (!resolvedCode || String(resolvedCode).trim() === "") {
+    const maxRes = await pool.query("SELECT MAX(id) as m FROM sales_person");
+    const nextId = Number(maxRes.rows[0].m || 0) + 1;
+    resolvedCode = `SP${nextId.toString().padStart(3, "0")}`;
+  }
+
+  await pool.query(
+    "INSERT INTO sales_person (code, name, start_work_date) VALUES ($1, $2, $3)",
+    [resolvedCode, name, start_work_date || null],
+  );
+
+  return { code: resolvedCode };
+}
+
+export async function updateSalesPersonByCode(code, { code: newCode, name, start_work_date } = {}) {
+  const resolvedCode = (newCode != null && String(newCode).trim() !== "") ? String(newCode).trim() : code;
+  const r = await pool.query(
+    "UPDATE sales_person SET code=$1, name=$2, start_work_date=$3 WHERE code=$4",
+    [resolvedCode, name, start_work_date || null, code],
+  );
+  if (r.rowCount === 0) return null;
+  return { ok: true, code: resolvedCode };
+}
+
+export async function deleteSalesPersonByCode(code) {
+  const r = await pool.query("DELETE FROM sales_person WHERE code = $1", [code]);
+  if (r.rowCount === 0) return null;
+  return { ok: true };
+}

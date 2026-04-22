@@ -40,11 +40,8 @@ export default function InvoicePage({ mode: propMode }) {
             getInvoice(id)
                 .then((inv) => {
                     setInvoiceData(inv);
-                    
+
                     const h = inv.header;
-                    const total = Number(h.total_amount);
-                    const vat = Math.round(Number(h.vat) * 100) / 100;
-                    const rate = total > 0 ? (vat / total) : 0.07;
 
                     setInitialData({
                         invoice_no: h.invoice_no,
@@ -53,7 +50,7 @@ export default function InvoicePage({ mode: propMode }) {
                         sales_person_code: h.sales_person_code || "",
                         sales_person_name: h.sales_person_name || "",
                         invoice_date: h.invoice_date,
-                        vat_rate: rate,
+                        vat_percent: Number(h.vat_percent ?? 0.07),
                         line_items: inv.line_items.map(li => ({
                             line_item_id: li.id,
                             product_code: li.product_code,
@@ -61,7 +58,8 @@ export default function InvoicePage({ mode: propMode }) {
                             product_label: `${li.product_code} - ${li.product_name}`,
                             units_code: li.units_code,
                             quantity: li.quantity,
-                            unit_price: li.unit_price
+                            unit_price: li.unit_price,
+                            line_discount_percent: Number(li.line_discount_percent || 0),
                         }))
                     });
                     setLoading(false);
@@ -150,6 +148,9 @@ export default function InvoicePage({ mode: propMode }) {
                                     <th className="text-right">Qty</th>
                                     <th className="text-right">Unit Price</th>
                                     <th className="text-right">Extended</th>
+                                    <th className="text-right">Disc %</th>
+                                    <th className="text-right">Disc Amt</th>
+                                    <th className="text-right">Net Price</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -159,7 +160,10 @@ export default function InvoicePage({ mode: propMode }) {
                                         <td>{li.units_code}</td>
                                         <td className="text-right">{Number(li.quantity || 0).toFixed(2)}</td>
                                         <td className="text-right">{formatBaht(li.unit_price)}</td>
-                                        <td className="text-right font-bold">{formatBaht(li.extended_price)}</td>
+                                        <td className="text-right">{formatBaht(li.extended_price)}</td>
+                                        <td className="text-right">{(Number(li.line_discount_percent || 0) * 100).toFixed(2)}%</td>
+                                        <td className="text-right" style={{ color: '#ef4444' }}>{formatBaht(li.line_discount_amount || 0)}</td>
+                                        <td className="text-right font-bold">{formatBaht(li.line_net_price ?? li.extended_price)}</td>
                                     </tr>
                                 ))}
                             </tbody>
@@ -170,17 +174,25 @@ export default function InvoicePage({ mode: propMode }) {
                         <div className="no-print text-muted" style={{ maxWidth: 300, fontSize: '0.8rem' }}>
                             Thank you for your business. Please pay within 30 days.
                         </div>
-                        <div style={{ minWidth: 200 }}>
+                        <div style={{ minWidth: 240 }}>
                             <div className="flex justify-between mb-2">
-                                <span>Subtotal:</span>
-                                <span>{formatBaht(h.total_amount)}</span>
+                                <span>Total Price:</span>
+                                <span>{formatBaht(h.total_price)}</span>
+                            </div>
+                            <div className="flex justify-between mb-2" style={{ color: '#ef4444' }}>
+                                <span>Total Discount:</span>
+                                <span>{formatBaht(h.total_discount || 0)}</span>
+                            </div>
+                            <div className="flex justify-between mb-2 font-bold" style={{ borderTop: '1px solid var(--border)', paddingTop: 6 }}>
+                                <span>Net Price:</span>
+                                <span>{formatBaht(h.net_price ?? h.total_price)}</span>
                             </div>
                             <div className="flex justify-between mb-2">
-                                <span>VAT:</span>
-                                <span>{formatBaht(h.vat)}</span>
+                                <span>VAT ({(Number(h.vat_percent || 0) * 100).toFixed(2)}%):</span>
+                                <span>{formatBaht(h.vat_amount)}</span>
                             </div>
                             <div className="flex justify-between mt-4 p-2 bg-body font-bold" style={{ fontSize: '1.1rem' }}>
-                                <span>Total Due:</span>
+                                <span>Amount Due:</span>
                                 <span>{formatBaht(h.amount_due)}</span>
                             </div>
                         </div>

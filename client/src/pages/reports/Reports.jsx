@@ -61,8 +61,8 @@ const REPORT_CONFIG = {
         { key: "product_code", label: "Product", sortable: true, render: (v) => <span className="font-bold">{v}</span> },
         { key: "customer_code", label: "Customer", sortable: true, render: (_, row) => `${row.customer_name} (${row.customer_code})` },
         ...(hasDateFilter ? [
-          { 
-            key: "date_range", 
+          {
+            key: "date_range",
             label: "Date Range",
             sortable: false,
             render: (_, row, filterState) => {
@@ -83,7 +83,57 @@ const REPORT_CONFIG = {
         { key: "value_sold", label: "Value", align: "right", sortable: true, style: { fontWeight: 600 }, render: (v) => formatBaht(v) }
       ];
     }
-  }
+  },
+  // Lab 4 — List of receipts
+  "receipt-list": {
+    title: "List of Receipts",
+    subtitle: "Customer payments with optional date and customer filters",
+    emptyMessage: "No receipts found.",
+    getColumns: () => [
+      { key: "receipt_no", label: "Receipt No", sortable: true, render: (v) => <span className="font-bold">{v}</span> },
+      { key: "receipt_date", label: "Date", sortable: true, render: (v) => formatDate(v) },
+      { key: "customer_code", label: "Customer Code", sortable: true },
+      { key: "customer_name", label: "Customer Name", sortable: true },
+      { key: "payment_method", label: "Method", sortable: false, render: (v) => (v === "bank_transfer" ? "Bank Transfer" : v ? v.charAt(0).toUpperCase() + v.slice(1) : "") },
+      { key: "payment_notes", label: "Notes", sortable: false, render: (v) => v || "-" },
+      { key: "total_received", label: "Total Received", align: "right", sortable: true, style: { fontWeight: 600, color: "var(--primary)" }, render: (v) => formatBaht(v) },
+    ],
+  },
+  // Lab 4 — Invoices + nested receipts list
+  "invoice-receipts": {
+    title: "Invoices with Receipt Information",
+    subtitle: "For each invoice, shows the list of receipts that paid it",
+    emptyMessage: "No invoices found.",
+    getColumns: () => [
+      { key: "invoice_no", label: "Invoice No", sortable: true, render: (v) => <span className="font-bold">{v}</span> },
+      { key: "invoice_date", label: "Invoice Date", sortable: true, render: (v) => formatDate(v) },
+      { key: "customer_code", label: "Cust. Code", sortable: true },
+      { key: "customer_name", label: "Customer", sortable: true },
+      { key: "amount_due", label: "Amount Due", align: "right", sortable: true, render: (v) => formatBaht(v) },
+      { key: "amount_received", label: "Amount Received", align: "right", sortable: false, style: { color: "var(--text-muted)" }, render: (v) => formatBaht(v) },
+      { key: "amount_remain", label: "Still Remaining", align: "right", sortable: false, style: { fontWeight: 600 }, render: (v) => formatBaht(v) },
+      {
+        key: "receipts",
+        label: "Receipts",
+        sortable: false,
+        render: (v) => {
+          const list = Array.isArray(v) ? v : [];
+          if (list.length === 0) return <span style={{ color: "var(--text-muted)" }}>—</span>;
+          return (
+            <ul style={{ margin: 0, paddingLeft: 16, fontSize: "0.85rem" }}>
+              {list.map((r, i) => (
+                <li key={i}>
+                  <strong>{r.receipt_no}</strong>
+                  {" · "}{formatDate(r.receipt_date)}
+                  {" · "}<span style={{ color: "var(--primary)", fontWeight: 600 }}>{formatBaht(r.amount_received_here)}</span>
+                </li>
+              ))}
+            </ul>
+          );
+        },
+      },
+    ],
+  },
 };
 
 export default function Reports({ type = "product-sales" }) {

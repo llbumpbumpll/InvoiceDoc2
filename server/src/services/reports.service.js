@@ -302,3 +302,172 @@ export async function getSalesByProductMonthlySummary({
   };
 }
 
+/* ===================== Lab 4 Reports ===================== */
+
+/**
+ * Report 1: List of receipts.
+ * Optional filters: date_from, date_to (on receipt_date), customer_code.
+ */
+export async function getReceiptListReport({
+  date_from,
+  date_to,
+  customer_code,
+  page = 1,
+  limit = 10,
+  sortBy = "receipt_date",
+  sortDir = "desc",
+} = {}) {
+  const offset = (Number(page) - 1) * Number(limit);
+
+  const allowedSort = {
+    receipt_no: "r.receipt_no",
+    receipt_date: "r.receipt_date",
+    customer_code: "c.code",
+    customer_name: "c.name",
+    total_received: "r.total_received",
+  };
+  const sortColumn = allowedSort[sortBy] || allowedSort.receipt_date;
+  const sortDirection = sortDir === "asc" ? "ASC" : "DESC";
+
+  let where = "WHERE 1=1";
+  const params = [];
+  let i = 1;
+
+  if (date_from) {
+    where += ` AND r.receipt_date >= $${i++}`;
+    params.push(date_from);
+  }
+  if (date_to) {
+    where += ` AND r.receipt_date <= $${i++}`;
+    params.push(date_to);
+  }
+  if (customer_code && String(customer_code).trim() !== "") {
+    where += ` AND c.code = $${i++}`;
+    params.push(String(customer_code).trim());
+  }
+
+  const countResult = await pool.query(
+    `
+      SELECT COUNT(*) AS total
+      FROM receipt r
+      JOIN customer c ON c.id = r.customer_id
+      ${where}
+    `,
+    params,
+  );
+  const total = Number(countResult.rows[0].total);
+
+  const { rows } = await pool.query(
+    `
+      SELECT r.receipt_no, r.receipt_date, c.code AS customer_code, c.name AS customer_name,
+             r.payment_method, r.payment_notes, r.total_received
+      FROM receipt r
+      JOIN customer c ON c.id = r.customer_id
+      ${where}
+      ORDER BY ${sortColumn} ${sortDirection}, r.id DESC
+      LIMIT $${i++} OFFSET $${i++}
+    `,
+    [...params, Number(limit), offset],
+  );
+
+  return {
+    data: rows,
+    total,
+    page: Number(page),
+    limit: Number(limit),
+    totalPages: Math.ceil(total / Number(limit)),
+  };
+}
+
+/**
+ * Report 2: List of invoices and receipt information.
+ * For each invoice, the `receipts` column is a JSON array of
+ * { receipt_no, receipt_date, amount_received_here } — aggregated in SQL.
+ */
+export async function getInvoiceReceiptsReport({
+  date_from,
+  date_to,
+  customer_code,
+  page = 1,
+  limit = 10,
+  sortBy = "invoice_date",
+  sortDir = "desc",
+} = {}) {
+  const offset = (Number(page) - 1) * Number(limit);
+
+  const allowedSort = {
+    invoice_no: "i.invoice_no",
+    invoice_date: "i.invoice_date",
+    customer_code: "c.code",
+    customer_name: "c.name",
+    amount_due: "i.amount_due",
+  };
+  const sortColumn = allowedSort[sortBy] || allowedSort.invoice_date;
+  const sortDirection = sortDir === "asc" ? "ASC" : "DESC";
+
+  let where = "WHERE 1=1";
+  const params = [];
+  let i = 1;
+
+  if (date_from) {
+    where += ` AND i.invoice_date >= $${i++}`;
+    params.push(date_from);
+  }
+  if (date_to) {
+    where += ` AND i.invoice_date <= $${i++}`;
+    params.push(date_to);
+  }
+  if (customer_code && String(customer_code).trim() !== "") {
+    where += ` AND c.code = $${i++}`;
+    params.push(String(customer_code).trim());
+  }
+
+  const countResult = await pool.query(
+    `
+      SELECT COUNT(*) AS total
+      FROM invoice i
+      JOIN customer c ON c.id = i.customer_id
+      ${where}
+    `,
+    params,
+  );
+  const total = Number(countResult.rows[0].total);
+
+  const { rows } = await pool.query(
+    `
+      SELECT i.invoice_no, i.invoice_date,
+             c.code AS customer_code, c.name AS customer_name,
+             v.amount_due, v.amount_received, v.amount_remain,
+             COALESCE(
+               (SELECT json_agg(
+                         json_build_object(
+                           'receipt_no',           r.receipt_no,
+                           'receipt_date',         r.receipt_date,
+                           'amount_received_here', rli.amount_received_here
+                         )
+                         ORDER BY r.receipt_date, r.id
+                       )
+                FROM receipt_line_item rli
+                JOIN receipt r ON r.id = rli.receipt_id
+                WHERE rli.invoice_id = i.id),
+               '[]'::json
+             ) AS receipts
+      FROM invoice i
+      JOIN customer c ON c.id = i.customer_id
+      JOIN invoice_received_view v ON v.invoice_id = i.id
+      ${where}
+      ORDER BY ${sortColumn} ${sortDirection}, i.id DESC
+      LIMIT $${i++} OFFSET $${i++}
+    `,
+    [...params, Number(limit), offset],
+  );
+
+  return {
+    data: rows,
+    total,
+    page: Number(page),
+    limit: Number(limit),
+    totalPages: Math.ceil(total / Number(limit)),
+  };
+}
+

@@ -31,3 +31,17 @@ export async function updateInvoice(invoiceNo, payload) {
   const res = unwrap(await http(`/api/invoices/${encodeURIComponent(invoiceNo)}`, { method: "PUT", body: JSON.stringify(payload) }));
   return res.data;
 }
+
+// Lab 4: unpaid invoices for a given customer — used by receipt form Invoice LoV.
+// Optionally exclude a specific receipt_id (so editing a receipt can still see
+// the invoices that receipt already touches).
+export async function listUnpaidInvoicesForCustomer(customer_code, exclude_receipt_id) {
+  const params = new URLSearchParams();
+  if (customer_code) params.set("customer_code", String(customer_code));
+  if (exclude_receipt_id != null && exclude_receipt_id !== "") {
+    params.set("exclude_receipt_id", String(exclude_receipt_id));
+  }
+  const qs = params.toString();
+  const res = unwrap(await http(`/api/invoices/lov/unpaid${qs ? `?${qs}` : ""}`));
+  return res.data ?? [];
+}
