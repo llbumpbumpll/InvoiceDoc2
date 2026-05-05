@@ -13,6 +13,9 @@ import ProductPage from "./pages/products/ProductPage.jsx";
 import Reports from "./pages/reports/Reports.jsx";
 import SalesPersonList from "./pages/salesPersons/SalesPersonList.jsx";
 import SalesPersonPage from "./pages/salesPersons/SalesPersonPage.jsx";
+import ReceiptList from "./pages/receipts/ReceiptList.jsx";
+import ReceiptPage from "./pages/receipts/ReceiptPage.jsx";
+import ReceiptReports from "./pages/reports/ReceiptReports.jsx";
 import { http } from "./api/http.js";
 import "./index.css";
 
@@ -82,7 +85,11 @@ function Sidebar() {
           <svg style={{ marginRight: 10 }} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
           Sales Persons
         </NavLink>
-        
+        <NavLink to="/receipts" className={getLinkClass}>
+          <svg style={{ marginRight: 10 }} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          Receipts
+        </NavLink>
+
         <SubMenu 
           basePath="/reports"
           icon={<svg style={{ marginRight: 10 }} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>}
@@ -96,6 +103,12 @@ function Sidebar() {
           </NavLink>
           <NavLink to="/reports/customer-sales" className={getSubLinkClass}>
             Customer Buying
+          </NavLink>
+          <NavLink to="/reports/receipt-list" className={getSubLinkClass}>
+            Receipt List
+          </NavLink>
+          <NavLink to="/reports/invoice-receipt" className={getSubLinkClass}>
+            Invoice &amp; Receipt
           </NavLink>
         </SubMenu>
       </nav>
@@ -211,6 +224,12 @@ ReactDOM.createRoot(document.getElementById("root")).render(
         <Route path="/reports/product-sales" element={<Layout><Reports type="product-sales" /></Layout>} />
         <Route path="/reports/monthly-sales" element={<Layout><Reports type="monthly-sales" /></Layout>} />
         <Route path="/reports/customer-sales" element={<Layout><Reports type="customer-sales" /></Layout>} />
+        <Route path="/receipts" element={<Layout><ReceiptList /></Layout>} />
+        <Route path="/receipts/new" element={<Layout><ReceiptPage mode="create" /></Layout>} />
+        <Route path="/receipts/:receiptNo/edit" element={<Layout><ReceiptPage mode="edit" /></Layout>} />
+        <Route path="/receipts/:receiptNo" element={<Layout><ReceiptPage mode="view" /></Layout>} />
+        <Route path="/reports/receipt-list" element={<Layout><ReceiptReports tab="receipt-list" /></Layout>} />
+        <Route path="/reports/invoice-receipt" element={<Layout><ReceiptReports tab="invoice-receipt" /></Layout>} />
       </Routes>
     </BrowserRouter>
   </React.StrictMode>

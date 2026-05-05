@@ -12,6 +12,8 @@ import customersRoutes from "./routes/customers.routes.js";
 import productsRoutes from "./routes/products.routes.js";
 import salesPersonsRoutes from "./routes/salesPersons.routes.js";
 import configurationRoutes from "./routes/configuration.routes.js";
+import receiptsRoutes from "./routes/receipts.routes.js";
+import receiptReportsRoutes from "./routes/receiptReports.routes.js";
 
 const app = express();
 
@@ -124,6 +126,8 @@ app.use("/api/invoices", invoicesRoutes);
 app.use("/api/sales-persons", salesPersonsRoutes);
 app.use("/api/config", configurationRoutes);
 app.use("/api/reports", reportsRoutes);
+app.use("/api/receipts", receiptsRoutes);
+app.use("/api/receipt-reports", receiptReportsRoutes);
 
 const port = process.env.PORT || 4000;
 const host = process.env.HOST || "0.0.0.0";
